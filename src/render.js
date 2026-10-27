@@ -1,11 +1,13 @@
 import { credits, tools, sessions, parlour, links } from './content.js';
+import { face } from './face.js';
 
 const BASE = import.meta.env.BASE_URL;
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ext = 'target="_blank" rel="noopener noreferrer"';
 const $ = (id) => document.getElementById(id);
+const two = (n) => String(n).padStart(2, '0');
+const wide = matchMedia('(min-width: 901px)');
 
-const FIRST_SESSIONS = 8;
 const CATEGORIES = [
   { id: 'all', label: 'All' },
   { id: 'design', label: '设计提示词' },
@@ -17,50 +19,37 @@ const postDate = (href) => {
   const id = href.match(/status\/(\d+)/)?.[1];
   if (!id) return '';
   const d = new Date(Number(BigInt(id) >> 22n) + 1288834974657);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}.${two(d.getMonth() + 1)}.${two(d.getDate())}`;
 };
-
-// Everything the viewfinder can frame, in page order.
-const shots = [
-  ...tools.map((t) => ({ img: `${BASE}${t.tape}`, code: t.code, meta: t.role })),
-  ...sessions.map((s, i) => ({ img: `${BASE}${s.cover}`, code: `${String(i + 1).padStart(2, '0')}A · ${postDate(s.href)}`, meta: s.meta })),
-];
 
 export function renderContent() {
   $('credits').innerHTML = credits.map((c) => `
-    <li class="reveal"><span class="no micro">${c.no}</span><b>${esc(c.title)}</b><span>${esc(c.role)}</span></li>`).join('');
+    <li class="reveal"><span class="no micro">${c.no}</span><b>${esc(c.title)}<small>${esc(c.en)}</small></b><span>${esc(c.role)}</span></li>`).join('');
 
-  $('tools').innerHTML = tools.map((t, i) => `
-    <li><a href="${t.href}" ${ext} data-shot="${i}">
-      <span class="k micro">${t.code}</span>
-      <span class="t"><img class="thumb tape" src="${BASE}${t.tape}" alt="" loading="lazy" />${esc(t.title)}<small>${esc(t.copy)}</small></span>
-      <span class="x">↗</span>
+  $('shelf').innerHTML = tools.map((t, i) => `
+    <li class="tape reveal ${i % 2 ? 'd1' : ''}"><a href="${t.href}" ${ext} data-glyph="${two(i + 1)}">
+      <span class="box"><img src="${BASE}${t.tape}" alt="${esc(t.title)} 录像带封面" loading="lazy" /></span>
+      <span class="cap"><span class="code micro">${t.code}</span><h3>${esc(t.title)}</h3><p>${esc(t.copy)}</p></span>
     </a></li>`).join('');
 
   $('filters').innerHTML = CATEGORIES.map((c, i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-cat="${c.id}">${c.label}</button>`).join('');
-  let cat = 'all', all = false;
-  const draw = () => renderSessions(cat, all);
   $('filters').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-cat]');
     if (!btn) return;
     $('filters').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b === btn));
-    cat = btn.dataset.cat;
-    all = false;
-    draw();
+    renderSessions(btn.dataset.cat);
   });
-  $('moreSessions').addEventListener('click', () => { all = true; draw(); });
-  draw();
+  renderSessions('all');
 
   $('rates').innerHTML = parlour.map((p) => `
     <li class="reveal">
-      <span class="k micro">No. ${p.no}</span>
-      <h3>${esc(p.zh)}<small class="micro">${esc(p.name)}</small></h3>
+      <h3><small class="micro">No. ${p.no} · ${esc(p.name)}</small>${esc(p.zh)}</h3>
       <p>${p.topics.map(esc).join(' · ')}</p>
       <span class="price">¥${p.price}<span> / 小时</span></span>
     </li>`).join('');
 
-  $('links').innerHTML = links.map((l) => `<li><a class="u" href="${l.href}" ${ext}><span>${esc(l.label)}</span><b>${esc(l.handle)}</b></a></li>`).join('') +
-    `<li><button class="u" type="button" data-qr><span>微信</span><b>扫码添加</b></button></li>`;
+  $('links').innerHTML = links.map((l) => `<li class="reveal"><a href="${l.href}" ${ext}><span class="micro">${esc(l.label)}</span><b>${esc(l.handle)}</b><span class="arr">↗</span></a></li>`).join('') +
+    `<li class="reveal"><button type="button" data-qr><span class="micro">微信</span><b>扫码添加</b><span class="arr">→</span></button></li>`;
 
   const qr = $('qr');
   document.addEventListener('click', (e) => {
@@ -68,53 +57,95 @@ export function renderContent() {
     else if (e.target.closest('[data-close]') || e.target === qr) qr.close();
   });
 
-  initViewfinder();
+  initFaceHover();
+  initTapeTilt();
+  initSections();
+  initCrate();
 }
 
-function renderSessions(cat, all) {
+function renderSessions(cat) {
   const list = sessions.filter((s) => cat === 'all' || s.category === cat);
-  const shown = all ? list : list.slice(0, FIRST_SESSIONS);
-  $('sessions').innerHTML = shown.map((s) => {
-    const i = sessions.indexOf(s);
+  $('trackRow').innerHTML = list.map((s) => {
+    const n = two(sessions.indexOf(s) + 1);
     return `
-    <li><a href="${s.href}" ${ext} data-shot="${tools.length + i}">
-      <span class="k micro">${postDate(s.href).slice(2)}</span>
-      <span class="t">${esc(s.title)}<img class="thumb" src="${BASE}${s.cover}" alt="" loading="lazy" /></span>
-      <span class="x">↗</span>
+    <li class="session"><a href="${s.href}" ${ext} data-glyph="${n}">
+      <span class="cover"><img src="${BASE}${s.cover}" alt="" loading="lazy" /><span class="num">${n}</span></span>
+      <span class="meta micro"><span>${esc(s.meta)}</span><span>${postDate(s.href)}</span></span>
+      <h3>${esc(s.title)}</h3>
     </a></li>`;
   }).join('');
-  $('moreSessions').hidden = shown.length >= list.length;
-  $('moreSessions').textContent = `Show all ${list.length}`;
+  $('crateTotal').textContent = two(list.length);
+  layoutCrate?.();
 }
 
-// One sticky frame frames whatever row you point at: a quick defocus, then the new shot snaps sharp.
-function initViewfinder() {
-  const frame = $('vfFrame'), img = $('vfImg');
-  let current = -1, timer = 0;
-  const show = (i) => {
-    if (i === current) return;
-    current = i;
-    const s = shots[i];
-    document.querySelectorAll('.rows a.is-active').forEach((a) => a.classList.remove('is-active'));
-    document.querySelector(`.rows a[data-shot="${i}"]`)?.classList.add('is-active');
-    frame.classList.add('is-focusing');
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      img.src = s.img;
-      $('vfCode').textContent = s.code;
-      $('vfMeta').textContent = s.meta;
-      $('vfCount').textContent = `${String(i + 1).padStart(2, '0')} / ${shots.length}`;
-      const done = () => frame.classList.remove('is-focusing');
-      if (img.complete) requestAnimationFrame(done); else img.onload = done;
-    }, 160);
+// Hovering a tape or a session puts its number on the companion's face.
+function initFaceHover() {
+  document.addEventListener('pointerover', (e) => {
+    const el = e.target.closest('[data-glyph]');
+    face.glyph = el ? el.dataset.glyph : null;
+  });
+  document.addEventListener('focusin', (e) => {
+    const el = e.target.closest('[data-glyph]');
+    face.glyph = el ? el.dataset.glyph : null;
+  });
+}
+
+// Tapes lean toward the cursor like objects picked up off a shelf.
+function initTapeTilt() {
+  if (!matchMedia('(pointer: fine)').matches) return;
+  $('shelf').addEventListener('pointermove', (e) => {
+    const a = e.target.closest('.tape a');
+    if (!a) return;
+    const r = a.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+    const box = a.querySelector('.box');
+    box.style.setProperty('--ry', `${x * 22}deg`);
+    box.style.setProperty('--rx', `${-y * 14}deg`);
+  });
+  $('shelf').addEventListener('pointerout', (e) => {
+    const a = e.target.closest('.tape a');
+    if (a && !a.contains(e.relatedTarget)) a.querySelector('.box').style.cssText = '';
+  });
+}
+
+// Whichever section crosses the middle of the screen sets the page colour and the companion's mood.
+function initSections() {
+  const root = document.documentElement;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      face.section = el.dataset.face;
+      root.style.setProperty('--sec-bg', el.dataset.bg);
+    });
+  }, { rootMargin: '-50% 0px -50% 0px' });
+  document.querySelectorAll('[data-face]').forEach((el) => io.observe(el));
+}
+
+// Side B is pinned while vertical scroll slides the sessions sideways (twice as far as you scroll).
+const SLIDE = 0.5;
+let layoutCrate = null;
+function initCrate() {
+  const section = $('sessions'), row = $('trackRow');
+  let distance = 0;
+  layoutCrate = () => {
+    if (!wide.matches) { section.style.height = ''; return; }
+    // offsetLeft ignores the current translate, so this is stable mid-scroll.
+    distance = Math.max(0, row.scrollWidth - (innerWidth - row.offsetLeft) + 56);
+    section.style.height = `${innerHeight + distance * SLIDE}px`;
+    onScroll();
   };
-  document.querySelector('.index-lists').addEventListener('pointerover', (e) => {
-    const a = e.target.closest('a[data-shot]');
-    if (a) show(+a.dataset.shot);
-  });
-  document.querySelector('.index-lists').addEventListener('focusin', (e) => {
-    const a = e.target.closest('a[data-shot]');
-    if (a) show(+a.dataset.shot);
-  });
-  show(0);
+  const onScroll = () => {
+    if (!wide.matches) return;
+    const t = Math.min(1, Math.max(0, -section.getBoundingClientRect().top / Math.max(1, distance * SLIDE)));
+    row.style.transform = `translate3d(${-t * distance}px,0,0)`;
+    const cards = row.children;
+    if (cards.length) $('crateNow').textContent = two(Math.min(cards.length, Math.floor(t * (cards.length - 1) + 1.5)));
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', layoutCrate);
+  wide.addEventListener('change', layoutCrate);
+  new ResizeObserver(() => layoutCrate()).observe(row); // cards may size after styles/fonts settle
+  document.fonts?.ready.then(layoutCrate);
+  layoutCrate();
 }

@@ -1,7 +1,8 @@
 import { sound } from './sound.js';
 import wave from './waveform.json';
+import { face } from './face.js';
 
-// Page chrome: custom cursor, Shanghai clock, scroll reveals, waveform player.
+// Page chrome: custom cursor, Shanghai clock, scroll reveals, waveform player, tab-title aside.
 export function initUI() {
   const fine = matchMedia('(pointer: fine)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -46,6 +47,12 @@ export function initUI() {
     reveals.forEach((el) => el.classList.add('in'));
   }
 
+  // He keeps playing while you're away.
+  const title = document.title;
+  document.addEventListener('visibilitychange', () => {
+    document.title = document.hidden ? '♪ 还在吹，等你回来…' : title;
+  });
+
   initPlayer();
 }
 
@@ -59,6 +66,7 @@ function initPlayer() {
   const canvas = document.getElementById('wave');
   const ctx = canvas.getContext('2d');
   const peaks = wave.peaks;
+  const mini = document.getElementById('miniFace').getContext('2d');
   let last = '';
 
   btn.addEventListener('click', () => sound.toggle());
@@ -93,6 +101,8 @@ function initPlayer() {
   const loop = () => {
     requestAnimationFrame(loop);
     draw();
+    // A tiny live copy of his LED face — the companion on phones, where the 3D figure is hidden.
+    if (face.ledCanvas) mini.drawImage(face.ledCanvas, 0, 0, 64, 64);
     time.textContent = sound.playing || sound.time ? `${mmss(sound.time)} / ${mmss(sound.duration || wave.duration)}` : 'Saxlele · 03:13';
   };
   requestAnimationFrame(loop);

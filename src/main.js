@@ -5,6 +5,7 @@ import { createLED } from './led.js';
 import { initUI } from './ui.js';
 import { renderContent } from './render.js';
 import { sound } from './sound.js';
+import { face } from './face.js';
 
 renderContent();
 initUI();
@@ -14,6 +15,7 @@ const MODEL_URL = `${import.meta.env.BASE_URL}models/camera_head_sax.glb`;
 // Lens of the camera head, measured from the model (metres, model space, facing +Z).
 const LENS = { center: new THREE.Vector3(0.038, 1.687, 0.154), radius: 0.064 };
 const START_TARGET = new THREE.Vector3(0, 0.96, 0);
+const COMPANION_TARGET = new THREE.Vector3(0, 0.93, 0);
 const FOV = 30;
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -25,7 +27,7 @@ const canvas = document.getElementById('scene');
 const nameEl = document.getElementById('heroName');
 const iris = document.getElementById('iris');
 const hud = document.getElementById('hud');
-const aperture = document.getElementById('aperture');
+const backdrop = document.getElementById('backdrop');
 const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -65,6 +67,7 @@ const rig = new THREE.Group();
 scene.add(rig);
 
 const led = createLED();
+face.ledCanvas = led.canvas;
 const ledDisc = new THREE.Mesh(
   new THREE.CircleGeometry(LENS.radius, 64),
   new THREE.MeshBasicMaterial({ map: led.texture, toneMapped: false })
@@ -118,7 +121,7 @@ function fitName() {
 }
 
 function resize() {
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
@@ -128,6 +131,7 @@ function resize() {
 addEventListener('resize', resize);
 document.fonts?.ready.then(fitName);
 resize();
+smoothed = progress; // a reload mid-page starts where it is, not by replaying the dive
 
 // ---------- Camera path ----------
 const lensWorld = new THREE.Vector3();
@@ -150,61 +154,94 @@ function endDistance() {
   return (LENS.radius * 0.7) /(halfTan * Math.sqrt(1 + camera.aspect * camera.aspect));
 }
 
-// Six-bladed shutter: a hexagon that grows and turns as it opens, until it clears the corners.
+// Six-bladed shutter: a hexagonal hole cut into the dark iris that grows and turns as it opens,
+// revealing the companion standing on the first page's colour.
 function setAperture(a) {
-  if (a <= 0) { aperture.style.clipPath = 'polygon(50% 50%, 50% 50%, 50% 50%)'; return; }
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (a <= 0) { iris.style.clipPath = 'none'; return; }
+  const w = innerWidth, h = innerHeight;
   const R = (a * Math.hypot(w, h)) / 2 / Math.cos(Math.PI / 6);
   const turn = (1 - a) * (Math.PI / 3);
-  const pts = [];
+  let hex = '';
   for (let i = 0; i < 6; i++) {
     const ang = turn + (i * Math.PI) / 3;
-    pts.push(`${(w / 2 + R * Math.cos(ang)).toFixed(1)}px ${(h / 2 + R * Math.sin(ang)).toFixed(1)}px`);
+    hex += `${i ? 'L' : 'M'}${(w / 2 + R * Math.cos(ang)).toFixed(1)} ${(h / 2 + R * Math.sin(ang)).toFixed(1)}`;
   }
-  aperture.style.clipPath = `polygon(${pts.join(',')})`;
-  aperture.firstElementChild.style.opacity = 1 - smooth(0.6, 0.95, a);
+  iris.style.clipPath = `path(evenodd, 'M0 0H${w}V${h}H0Z${hex}Z')`;
 }
 
-let visible = true;
-new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(hero);
+// After the hero the figure stays on as a companion in the right third (desktop only).
+const wide = matchMedia('(min-width: 901px)');
+function companionDistance() {
+  const halfTan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+  return 1.95 / 0.74 / 2 / halfTan;
+}
+
+// The face per page; hover glyphs win, music wins over everything.
+let section = '', sectionSince = 0;
+function sectionGlyph(now) {
+  if (face.section !== section) { section = face.section; sectionSince = now; }
+  if (section === 'notes' && now - sectionSince < 2200) return 'HI';
+  if (section === 'parlour') return '?';
+  if (section === 'contact') return 'heart';
+  return null;
+}
 
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min((now - last) / 1000, 0.1);
   last = now;
-  if (!visible) return;
-
   const k = reduced.matches ? 1 : 1 - Math.exp(-7 * dt);
   smoothed += (progress - smoothed) * k;
   pointer.sx += (pointer.x - pointer.sx) * (1 - Math.exp(-4 * dt));
   pointer.sy += (pointer.y - pointer.sy) * (1 - Math.exp(-4 * dt));
 
   const p = smoothed;
+  const companion = p > 0.85; // switched while the iris is fully dark
+  const showFigure = !companion || wide.matches;
+  canvas.style.opacity = showFigure ? '' : '0';
+  backdrop.style.opacity = companion ? 1 : 0;
   const t = easeInOut(clamp(p / 0.78));
   const d0 = startDistance(), d1 = endDistance();
   const d = d0 * Math.pow(d1 / d0, t); // log-distance dolly: constant perceived speed
   const approach = (d0 - d) / (d0 - d1); // 0 far → 1 at the lens
   const free = 1 - smooth(0, 0.35, p); // pointer influence fades as we commit to the dive
 
-  rig.rotation.y = pointer.sx * 0.28 * free;
-  rig.rotation.x = pointer.sy * 0.05 * free;
+  if (companion) {
+    // Turned a little toward the page content, still following the pointer.
+    rig.rotation.y = -0.32 + pointer.sx * 0.22;
+    rig.rotation.x = pointer.sy * 0.04;
+    rig.rotation.z = sound.playing ? Math.sin(now * 0.004) * 0.025 : 0;
+  } else {
+    rig.rotation.set(pointer.sy * 0.05 * free, pointer.sx * 0.28 * free, 0);
+  }
   rig.updateMatrixWorld();
   lensWorld.copy(LENS.center).applyMatrix4(rig.matrixWorld);
   lensNormal.set(0, 0, 1).transformDirection(rig.matrixWorld);
 
-  target.lerpVectors(START_TARGET, lensWorld, approach);
-  dir.lerpVectors(startDir, lensNormal, smooth(0.1, 0.8, approach)).normalize();
-  camera.position.copy(target).addScaledVector(dir, d);
-  camera.position.x += pointer.sx * -0.15 * free;
-  camera.position.y += pointer.sy * 0.1 * free;
-  camera.lookAt(target);
+  if (companion) {
+    // Same perspective, frame shifted so the figure stands at ~77% of the width.
+    camera.setViewOffset(innerWidth, innerHeight, -0.27 * innerWidth, 0, innerWidth, innerHeight);
+    camera.position.copy(COMPANION_TARGET).add(new THREE.Vector3(0, 0.05, companionDistance()));
+    camera.lookAt(COMPANION_TARGET);
+  } else {
+    camera.clearViewOffset();
+    target.lerpVectors(START_TARGET, lensWorld, approach);
+    dir.lerpVectors(startDir, lensNormal, smooth(0.1, 0.8, approach)).normalize();
+    camera.position.copy(target).addScaledVector(dir, d);
+    camera.position.x += pointer.sx * -0.15 * free;
+    camera.position.y += pointer.sy * 0.1 * free;
+    camera.lookAt(target);
+  }
 
-  led.state.gazeX = pointer.sx * free;
-  led.state.gazeY = pointer.sy * free;
-  led.state.close = smooth(0.68, 0.8, p);
+  // Eyes look toward the pointer from wherever the figure stands on screen.
+  led.state.gazeX = companion ? clamp((pointer.sx - 0.54) * 1.4, -1, 1) : pointer.sx * free;
+  led.state.gazeY = companion ? pointer.sy : pointer.sy * free;
+  led.state.close = companion ? 0 : smooth(0.68, 0.8, p);
   led.state.eq = sound.levels(8);
+  led.state.glyph = companion ? face.glyph ?? sectionGlyph(now) : null;
   led.draw(now);
+  if (!showFigure) return;
 
   // DOM layers riding the same progress.
   const sx = +nameEl.dataset.sx || 1, sy = +nameEl.dataset.sy || 1;
@@ -213,10 +250,11 @@ function frame(now) {
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, p);
   hud.style.opacity = 1 - smooth(0, 0.12, p);
   iris.style.opacity = smooth(0.76, 0.84, p);
+  iris.style.visibility = p >= 0.999 ? 'hidden' : '';
   setAperture(smooth(0.86, 1, p));
 
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
 
-if (import.meta.env.DEV) window.__debug = { camera, ledDisc, get p() { return smoothed; } };
+if (import.meta.env.DEV) window.__debug = { camera, ledDisc, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };

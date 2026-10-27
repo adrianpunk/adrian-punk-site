@@ -1,6 +1,6 @@
 # Adrian.Punk — Portfolio
 
-个人网站。首页是一个相机头人物吹萨克斯的 3D 模型（three.js），向下滚动时镜头一路推进到相机镜头里，穿过镜头后的 LED 屏直接落到下一页。
+个人网站，概念是一张 Blue Note 风格的现场专辑《Live at the Lens》。首页镜头钻进相机头人物的镜头里，六边形光圈打开后，他作为向导一直站在页面右侧，LED 脸随每一页和鼠标悬停变化。
 
 ## 开发
 
@@ -19,7 +19,8 @@ npm run build   # 输出到 dist/
 
 - `index.html` — 页面结构（Hero 滚动轨道 + About / Work / Contact）
 - `src/main.js` — three.js 场景、模型加载、滚动驱动的镜头推进
-- `src/led.js` — 镜头里的点阵 LED 眼睛（跟随鼠标、眨眼、推进时闭眼）
+- `src/led.js` — 镜头里的点阵 LED 脸：眼睛、均衡器、数字和图标（HI / ? / ♥ / 作品编号）
+- `src/face.js` — 各页通知 LED 脸该显示什么
 - `src/content.js` — 全站文案与数据（履历、工具、作品、报价、链接），改内容只改这里
 - `src/render.js` — 把 content.js 渲染成各页
 - `src/sound.js` — 萨克斯音轨（默认关闭）与频谱，驱动镜头里的 LED 均衡器
