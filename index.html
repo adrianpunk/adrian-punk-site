@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adrian.Punk — Portfolio</title>
+  <meta name="description" content="Adrian.Punk — designer / developer wandering between minimalism and chaos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,500&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+
+  <!-- Hero: a tall scroll track with a sticky stage. Scrolling through it dollies the camera into the lens. -->
+  <header class="hero" id="top">
+    <div class="stage" id="stage">
+      <div class="hero-name" id="heroName" aria-label="Adrian.Punk"><span>Adrian<span class="dot">.</span>Punk</span></div>
+      <canvas id="scene" aria-label="相机头人物吹奏萨克斯的三维模型"></canvas>
+      <div class="iris" id="iris" aria-hidden="true"></div>
+
+      <div class="hud" id="hud">
+        <div class="corner tl micro brand"><i></i><span>Adrian.Punk — Portfolio</span></div>
+        <nav class="corner tr micro" aria-label="Main">
+          <ul><li><a href="#work">Work</a></li><li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li></ul>
+        </nav>
+        <div class="corner bl micro clock"><span class="live">●</span><span class="time" id="clock">--:--:--</span><span class="sep">/</span><span>Shanghai, CN</span></div>
+        <div class="corner br micro scroll-hint"><span>Scroll ↓</span><div class="line"></div></div>
+      </div>
+      <p class="loader micro" id="loader">Loading <span id="loaderPct">0</span>%</p>
+    </div>
+  </header>
+
+  <!-- First page after the lens: same dark as the LED panel so the dive lands seamlessly. -->
+  <section id="about" class="about dark">
+    <div class="label micro reveal">About</div>
+    <div class="about-grid">
+      <div class="about-text reveal d1">
+        <p>我是 Adrian，一个在极简与混沌之间游走的设计师 / 开发者。我相信留白比装饰更有力量，也相信一点点噪音能让秩序显得真实。</p>
+        <p>I build <em>quiet interfaces</em> with loud ideas underneath — typography-first layouts, real-time graphics, and interactions you notice only when they're gone.</p>
+      </div>
+      <div class="about-kw reveal d2">Chaos,<br /><span class="thin">ordered.</span></div>
+      <div class="about-meta micro reveal d3"><span><b>Role</b> — Design × Code</span><span><b>Base</b> — Shanghai</span><span><b>Status</b> — Open for 2026</span></div>
+    </div>
+  </section>
+
+  <section id="work">
+    <div class="label micro reveal">Selected work</div>
+    <article class="project reveal">
+      <div class="num" aria-hidden="true">01</div>
+      <div class="fig"><div class="fig-box">
+        <svg viewBox="0 0 400 300" fill="none" stroke="#111" stroke-width="1" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 150 C 40 60, 80 60, 120 150 S 200 240, 240 150 S 320 60, 360 150 S 400 200, 420 150" opacity=".85" />
+          <path d="M0 150 C 50 90, 90 90, 140 150 S 220 210, 260 150 S 340 90, 380 150" opacity=".45" />
+          <path d="M0 150 C 60 120, 100 120, 160 150 S 240 180, 280 150 S 360 120, 400 150" opacity=".25" />
+          <line x1="0" y1="150" x2="400" y2="150" stroke-dasharray="2 6" opacity=".3" /><circle cx="240" cy="150" r="3" fill="#B8322A" stroke="none" />
+        </svg><span class="micro idx">FIG. 01</span><span class="micro tag">Realtime · WebGL</span>
+      </div></div>
+      <div class="info"><h3><span class="n">01 /</span>Signal</h3><p>A generative identity system that listens to live data and translates it into a slow, breathing typographic wave.</p><a class="more micro" href="#work">View case <span class="arr">→</span></a></div>
+    </article>
+    <article class="project reveal">
+      <div class="num" aria-hidden="true">02</div>
+      <div class="fig"><div class="fig-box">
+        <svg viewBox="0 0 400 300" aria-hidden="true"><defs><pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse"><circle cx="7" cy="7" r="1" fill="#111" opacity=".5" /></pattern></defs><rect width="400" height="300" fill="url(#dots)" /><rect x="120" y="70" width="160" height="160" fill="none" stroke="#111" stroke-width="1" /><rect x="140" y="90" width="160" height="160" fill="#F4F2EE" stroke="#111" stroke-width="1" /><line x1="140" y1="90" x2="300" y2="250" stroke="#111" opacity=".4" /><rect x="292" y="82" width="8" height="8" fill="#B8322A" /></svg>
+        <span class="micro idx">FIG. 02</span><span class="micro tag">Editorial · Type</span>
+      </div></div>
+      <div class="info"><h3><span class="n">02 /</span>Noise</h3><p>Print-meets-screen editorial for a small record label — grain, grids and deliberately imperfect kerning.</p><a class="more micro" href="#work">View case <span class="arr">→</span></a></div>
+    </article>
+    <article class="project reveal">
+      <div class="num" aria-hidden="true">03</div>
+      <div class="fig"><div class="fig-box">
+        <svg viewBox="0 0 400 300" fill="none" stroke="#111" stroke-width="1" aria-hidden="true"><circle cx="200" cy="150" r="90" opacity=".9" /><circle cx="200" cy="150" r="60" opacity=".35" /><circle cx="200" cy="150" r="30" opacity=".15" /><line x1="0" y1="240" x2="400" y2="240" opacity=".5" /><line x1="200" y1="60" x2="200" y2="66" opacity=".6" /><circle cx="290" cy="150" r="2.5" fill="#B8322A" stroke="none" /></svg>
+        <span class="micro idx">FIG. 03</span><span class="micro tag">Product · Motion</span>
+      </div></div>
+      <div class="info"><h3><span class="n">03 /</span>Silence</h3><p>A meditation app where the interface disappears the longer you use it. Zero notifications, one gesture.</p><a class="more micro" href="#work">View case <span class="arr">→</span></a></div>
+    </article>
+  </section>
+
+  <div class="rule"></div>
+  <section id="contact" class="contact">
+    <div class="label micro reveal">Contact</div>
+    <h2 class="reveal d1">Let’s talk<span class="dot">.</span></h2>
+    <a class="mail reveal d2" href="mailto:hello@adrianpunk.com">hello@adrianpunk.com</a>
+    <div class="side micro reveal d3"><a href="https://github.com/adrianpunk" target="_blank" rel="noopener noreferrer">GitHub ↗</a><a href="https://twitter.com" target="_blank" rel="noopener noreferrer">X / Twitter ↗</a><a href="https://dribbble.com" target="_blank" rel="noopener noreferrer">Dribbble ↗</a></div>
+  </section>
+  <footer class="micro"><span>© 2026 Adrian.Punk</span><a class="top" href="#top">Back to top ↑</a><span>Built with three.js</span></footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
