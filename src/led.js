@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 // A 32×32 dot-matrix panel that lives behind the lens glass: two amber eyes that
 // follow the pointer and blink. `close` (0..1) shuts the eyes as the camera dives in.
+// While music plays, `eq` (8 levels 0..1) turns the eyes into an equalizer.
 const GRID = 32;
 const SIZE = 512;
 const CELL = SIZE / GRID;
@@ -14,7 +15,7 @@ export function createLED() {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4;
 
-  const state = { gazeX: 0, gazeY: 0, close: 0 };
+  const state = { gazeX: 0, gazeY: 0, close: 0, eq: null };
   let nextBlink = performance.now() + 2600;
   let blinkUntil = 0;
   let signature = '';
@@ -30,7 +31,9 @@ export function createLED() {
     const blink = now < blinkUntil;
     const half = blink ? 0 : Math.round(4 * (1 - state.close));
     const off = state.close >= 0.999;
-    const sig = [gx, gy, half, off].join(':');
+    // Equalizer: 8 bars, 2 dots wide, rising from row 24 (max 16 rows), squashed as the eyes close.
+    const bars = state.eq?.map((v) => Math.round(v * 16 * (1 - state.close)));
+    const sig = [gx, gy, half, off, bars].join(':');
     if (sig === signature) return false;
     signature = sig;
 
@@ -41,9 +44,15 @@ export function createLED() {
       for (let x = 0; x < GRID; x++) {
         if (Math.hypot(x - 15.5, y - 15.5) > 15.6) continue;
         const inEye = (x >= 9 + gx && x <= 12 + gx) || (x >= 19 + gx && x <= 22 + gx);
-        let lit = !off && inEye && (half === 0 ? y === cy : y >= cy - half && y <= cy + half - 1);
-        // Round off the eye corners.
-        if (lit && half >= 3 && (y === cy - half || y === cy + half - 1) && [9, 12, 19, 22].includes(x - gx)) lit = false;
+        let lit;
+        if (bars) {
+          const col = Math.floor((x - 4) / 3);
+          lit = !off && x >= 4 && col < 8 && (x - 4) % 3 < 2 && y <= 24 && y > 24 - Math.max(1, bars[col]);
+        } else {
+          lit = !off && inEye && (half === 0 ? y === cy : y >= cy - half && y <= cy + half - 1);
+          // Round off the eye corners.
+          if (lit && half >= 3 && (y === cy - half || y === cy + half - 1) && [9, 12, 19, 22].includes(x - gx)) lit = false;
+        }
         ctx.shadowBlur = lit ? 10 : 0;
         ctx.shadowColor = 'rgba(255,157,45,.55)';
         ctx.fillStyle = lit ? '#ffb650' : '#21190f';

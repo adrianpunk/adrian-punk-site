@@ -3,7 +3,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLED } from './led.js';
 import { initUI } from './ui.js';
+import { renderContent } from './render.js';
+import { sound } from './sound.js';
 
+renderContent();
 initUI();
 
 const MODEL_URL = `${import.meta.env.BASE_URL}models/camera_head_sax.glb`;
@@ -184,6 +187,7 @@ function frame(now) {
   led.state.gazeX = pointer.sx * free;
   led.state.gazeY = pointer.sy * free;
   led.state.close = smooth(0.8, 0.93, p);
+  led.state.eq = sound.levels(8);
   led.draw(now);
 
   // DOM layers riding the same progress.
