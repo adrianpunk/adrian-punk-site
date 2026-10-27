@@ -1,6 +1,7 @@
 import { sound } from './sound.js';
+import wave from './waveform.json';
 
-// Page chrome: custom cursor, Shanghai clock, scroll reveals, sound dock, About equalizer.
+// Page chrome: custom cursor, Shanghai clock, scroll reveals, waveform player.
 export function initUI() {
   const fine = matchMedia('(pointer: fine)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -24,7 +25,7 @@ export function initUI() {
   document.addEventListener('mouseleave', () => cursor.classList.remove('is-visible'));
   // Delegated, so content rendered from data gets the hover state too.
   document.addEventListener('pointerover', (e) => {
-    cursor.classList.toggle('is-hover', !!e.target.closest('a,button'));
+    cursor.classList.toggle('is-hover', !!e.target.closest('a,button,canvas#wave'));
   });
 
   const clock = document.getElementById('clock');
@@ -45,56 +46,54 @@ export function initUI() {
     reveals.forEach((el) => el.classList.add('in'));
   }
 
-  initSound();
+  initPlayer();
 }
 
 const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-function initSound() {
-  const btn = document.getElementById('sound');
-  const label = document.getElementById('soundLabel');
-  const bars = btn.querySelectorAll('.bars i');
-  const eq = document.getElementById('eq');
-  const ectx = eq.getContext('2d');
-  let eqVisible = false;
-  new IntersectionObserver(([e]) => { eqVisible = e.isIntersecting; }).observe(eq);
+// The music is one line: the sax track's real waveform. Played part in ink, the rest faint,
+// playhead in the accent. Click anywhere on it to jump there.
+function initPlayer() {
+  const btn = document.getElementById('play');
+  const time = document.getElementById('time');
+  const canvas = document.getElementById('wave');
+  const ctx = canvas.getContext('2d');
+  const peaks = wave.peaks;
+  let last = '';
 
   btn.addEventListener('click', () => sound.toggle());
-  sound.onChange((on) => {
-    btn.setAttribute('aria-pressed', on);
-    btn.classList.toggle('is-on', on);
-    if (!on) label.textContent = 'Sound off';
+  sound.onChange((on) => btn.setAttribute('aria-pressed', on));
+  canvas.addEventListener('click', (e) => {
+    const r = canvas.getBoundingClientRect();
+    sound.seek((e.clientX - r.left) / r.width);
   });
 
-  // Amber dot-matrix strip across the top of the About page — the lens panel, continued.
-  const DOT = 11, ROWS = 7;
-  function drawEq(levels, now) {
-    const w = eq.clientWidth, h = DOT * ROWS;
-    if (eq.width !== w * 2) { eq.width = w * 2; eq.height = h * 2; }
-    ectx.setTransform(2, 0, 0, 2, 0, 0);
-    ectx.clearRect(0, 0, w, h);
-    const cols = Math.floor(w / DOT);
-    for (let c = 0; c < cols; c++) {
-      const band = levels ? levels[Math.floor((c / cols) * levels.length)] : 0;
-      // Idle: a slow breathing wave. Playing: the music's spectrum with a little ripple.
-      const v = levels ? band * (0.75 + 0.25 * Math.sin(now * 0.004 + c * 0.9)) : 0.12 + 0.1 * Math.sin(now * 0.0012 + c * 0.35);
-      const lit = Math.round(v * ROWS);
-      for (let r = 0; r < ROWS; r++) {
-        const on = ROWS - r <= lit;
-        ectx.fillStyle = on ? '#ffb650' : '#21190f';
-        ectx.beginPath();
-        ectx.arc(c * DOT + DOT / 2, r * DOT + DOT / 2, on ? 3.2 : 2.4, 0, Math.PI * 2);
-        ectx.fill();
-      }
+  function draw() {
+    const w = canvas.clientWidth, h = canvas.clientHeight, dpr = Math.min(devicePixelRatio, 2);
+    const progress = sound.duration ? sound.time / sound.duration : 0;
+    const sig = [w, h, Math.round(progress * 400), sound.playing].join(':');
+    if (sig === last) return;
+    last = sig;
+    if (canvas.width !== w * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const n = Math.max(24, Math.floor(w / 3));
+    for (let i = 0; i < n; i++) {
+      const v = peaks[Math.floor((i / n) * peaks.length)];
+      const bh = Math.max(2, v * h);
+      ctx.fillStyle = i / n < progress ? '#111' : 'rgba(17,17,17,.2)';
+      ctx.fillRect(i * (w / n), (h - bh) / 2, 1.5, bh);
+    }
+    if (sound.playing || progress > 0) {
+      ctx.fillStyle = '#c8372b';
+      ctx.fillRect(Math.round(progress * w), 0, 1.5, h);
     }
   }
 
-  const loop = (now) => {
+  const loop = () => {
     requestAnimationFrame(loop);
-    const levels = sound.levels(8);
-    bars.forEach((b, i) => { b.style.transform = `scaleY(${levels ? 0.2 + levels[i * 2] * 0.8 : 0.2})`; });
-    if (sound.playing) label.textContent = `${mmss(sound.time)} / ${mmss(sound.duration)}`;
-    if (eqVisible) drawEq(levels, now);
+    draw();
+    time.textContent = sound.playing || sound.time ? `${mmss(sound.time)} / ${mmss(sound.duration || wave.duration)}` : 'Saxlele · 03:13';
   };
   requestAnimationFrame(loop);
 }

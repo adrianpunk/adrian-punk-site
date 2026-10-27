@@ -4,98 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Adrian.Punk — Portfolio</title>
-  <meta name="description" content="Adrian.Punk — AI 视觉创作者、创作系统搭建者。一张关于增长、科学、AI 与萨克斯的个人专辑。" />
+  <meta name="description" content="Adrian.Punk — AI 视觉创作者、创作系统搭建者。把经验拆成问题、变量与系统，再用 AI 把想象力变成看得见的作品。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,500&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div class="noise" aria-hidden="true"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <!-- Sound dock: plays Adrian's own sax recording; drives the LED equalizers. -->
-  <button class="sound micro" id="sound" type="button" aria-pressed="false" aria-label="播放 / 暂停背景音乐">
-    <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-    <span class="sound-label" id="soundLabel">Sound off</span>
-  </button>
-
-  <!-- Hero: a tall scroll track with a sticky stage. Scrolling through it dollies the camera into the lens. -->
+  <!-- Hero: a tall scroll track with a sticky stage. Scrolling dollies the camera into the lens;
+       the screen goes dark, then a hexagonal aperture opens onto the rest of the site. -->
   <header class="hero" id="top">
     <div class="stage" id="stage">
       <div class="hero-name" id="heroName" aria-label="Adrian.Punk"><span>Adrian<span class="dot">.</span>Punk</span></div>
       <canvas id="scene" aria-label="相机头人物吹奏萨克斯的三维模型"></canvas>
       <div class="iris" id="iris" aria-hidden="true"></div>
+      <div class="aperture" id="aperture" aria-hidden="true"><p class="micro">Frame 01 — Shutter open</p></div>
 
       <div class="hud" id="hud">
-        <div class="corner tl micro brand"><i></i><span>Adrian.Punk — Portfolio</span></div>
+        <i class="mark tl"></i><i class="mark tr"></i><i class="mark bl"></i><i class="mark br"></i>
+        <div class="corner tl micro brand"><i></i><span>Adrian.Punk</span></div>
         <nav class="corner tr micro" aria-label="Main">
-          <ul><li><a href="#tools">Tools</a></li><li><a href="#sessions">Sessions</a></li><li><a href="#parlour">Parlour</a></li><li><a href="#contact">Contact</a></li></ul>
+          <ul><li><a href="#notes">Notes</a></li><li><a href="#index">Index</a></li><li><a href="#parlour">Parlour</a></li><li><a href="#contact">Contact</a></li></ul>
         </nav>
-        <div class="corner bl micro clock"><span class="live">●</span><span class="time" id="clock">--:--:--</span><span class="sep">/</span><span>Shanghai, CN</span></div>
-        <div class="corner bc micro scroll-hint"><span>Scroll ↓</span><div class="line"></div></div>
+        <div class="corner bl micro clock"><span class="live">●</span><span>REC</span><span class="time" id="clock">--:--:--</span><span class="sep">/</span><span>Shanghai</span></div>
+        <div class="corner bc micro scroll-hint"><span>Scroll to focus</span><div class="line"></div></div>
       </div>
       <p class="loader micro" id="loader">Loading <span id="loaderPct">0</span>%</p>
     </div>
   </header>
 
-  <!-- Track 01 — the page you land in after the lens. Same dark as the LED panel so the dive lands seamlessly. -->
-  <section id="about" class="about dark">
-    <canvas class="eq" id="eq" aria-hidden="true"></canvas>
-    <div class="label micro reveal">Track 01 — Liner Notes</div>
-    <div class="about-grid">
-      <div class="about-text reveal d1">
-        <p class="hello">你好，我是 Adrian.Punk。</p>
-        <p>从用户增长、疫苗研发质量管理到管理科学，再到 AI 视觉创作与企业培训——我习惯把经验拆成问题、变量与系统，再用 AI 把想象力变成看得见的作品。</p>
-        <p><em>AI visual creator</em> &amp; creative system builder. Off the clock, I play the sax.</p>
+  <main>
+    <section id="notes" class="sec">
+      <div class="sec-head micro reveal"><span>01 — Notes</span><span>Frame 01 / 04</span></div>
+      <p class="statement reveal d1">我把经验拆成<em>问题、变量与系统</em>，<br class="br-wide" />再用 AI 把想象力变成看得见的作品。</p>
+      <div class="notes-grid">
+        <div class="intro reveal d2">
+          <p>你好，我是 Adrian.Punk——AI 视觉创作者，也是创作系统的搭建者。工作之外，我吹萨克斯。</p>
+          <p class="en">AI visual creator &amp; creative system builder. Based in Shanghai.</p>
+        </div>
+        <ol class="credits" id="credits"></ol>
       </div>
-      <div class="about-kw reveal d2">Chaos,<br /><span class="thin">ordered.</span></div>
-    </div>
-    <div class="credits-head micro reveal">Credits <span>— 5 tracks</span></div>
-    <ol class="credits" id="credits"></ol>
-  </section>
+    </section>
 
-  <section id="tools" class="tools">
-    <div class="label micro reveal">Side A — Tools</div>
-    <header class="side-head reveal d1">
-      <h2>Side A<span class="dot">.</span></h2>
-      <p>四盒录像带，四个可以直接拿去用的创作工具。</p>
-    </header>
-    <ol class="tracklist" id="tracklist"></ol>
-    <img class="tape-float" id="tapeFloat" alt="" aria-hidden="true" />
-  </section>
+    <section id="index" class="sec">
+      <div class="sec-head micro reveal"><span>02 — Index</span><span>Frame 02 / 04</span></div>
+      <div class="index">
+        <div class="index-lists">
+          <div class="list-head reveal"><h2 class="h">Tools</h2><span class="micro count">04</span></div>
+          <ol class="rows" id="tools"></ol>
+          <div class="list-head reveal"><h2 class="h">Sessions</h2><div class="filters micro" id="filters" role="tablist" aria-label="筛选"></div></div>
+          <ol class="rows" id="sessions"></ol>
+          <div class="list-foot micro"><button type="button" id="moreSessions">Show all</button><a href="https://x.com/AdrianPunk115" target="_blank" rel="noopener noreferrer">All on X ↗</a></div>
+        </div>
+        <aside class="viewfinder" aria-hidden="true">
+          <div class="vf-frame" id="vfFrame">
+            <img id="vfImg" alt="" />
+            <i class="vf-focus"></i>
+            <span class="vf-top micro"><span>AF·S</span><span id="vfCount">01 / 28</span></span>
+          </div>
+          <div class="vf-readout micro"><span id="vfCode">AP-01</span><span id="vfMeta"></span></div>
+        </aside>
+      </div>
+    </section>
 
-  <section id="sessions" class="sessions film">
-    <div class="label micro reveal">Side B — Sessions</div>
-    <header class="side-head reveal d1">
-      <h2>Side B<span class="dot">.</span></h2>
-      <p>在 X 上录下的提示词实验与小白教程，每一帧都能点开。</p>
-    </header>
-    <div class="filters micro reveal d2" id="filters" role="tablist" aria-label="筛选"></div>
-    <div class="contact-sheet" id="sheet"></div>
-    <div class="sheet-more"><button class="more-btn micro" id="moreSessions" type="button">More sessions ↓</button><a class="micro" href="https://x.com/AdrianPunk115" target="_blank" rel="noopener noreferrer">All on X ↗</a></div>
-  </section>
+    <section id="parlour" class="sec">
+      <div class="sec-head micro reveal"><span>03 — Parlour</span><span>Frame 03 / 04</span></div>
+      <h2 class="display reveal d1">Punk’s <em>Parlour</em><span class="dot">.</span></h2>
+      <p class="lede reveal d2">一张报价单，一次有用的对话。</p>
+      <ol class="rates" id="rates"></ol>
+      <div class="rates-foot micro reveal"><span>CNY · 按小时计费 · By appointment</span><button type="button" data-qr>微信预约 →</button></div>
+    </section>
 
-  <section id="parlour" class="parlour">
-    <div class="label micro reveal">Live Sessions — By appointment</div>
-    <header class="side-head reveal d1">
-      <h2>Punk’s <em>Parlour</em><span class="dot">.</span></h2>
-      <p>一张报价单，一次有用的对话。Good questions, better next steps.</p>
-    </header>
-    <div class="tickets" id="tickets"></div>
-    <p class="fine micro reveal">人民币 CNY · 按小时计费 · One-to-one / by appointment</p>
-  </section>
+    <section id="contact" class="sec">
+      <div class="sec-head micro reveal"><span>04 — Encore</span><span>Frame 04 / 04</span></div>
+      <h2 class="display jam reveal d1">Let’s jam<span class="dot">.</span></h2>
+      <ul class="links micro" id="links"></ul>
+    </section>
+  </main>
 
-  <div class="rule"></div>
-  <section id="contact" class="contact">
-    <div class="label micro reveal">Encore</div>
-    <h2 class="reveal d1">Let’s jam<span class="dot">.</span></h2>
-    <ul class="links" id="links"></ul>
-  </section>
-  <footer class="micro"><span>℗ 2026 Adrian.Punk · End of Side B</span><a class="top" href="#top">Back to top ↑</a><span>Sax &amp; code by Adrian.Punk</span></footer>
+  <footer class="micro"><span>℗ 2026 Adrian.Punk</span><a href="#top">Back to top ↑</a><span>Sax, camera &amp; code by Adrian.Punk</span></footer>
+
+  <!-- The music: one line. Adrian's own sax recording, off until played. -->
+  <div class="player micro" id="player">
+    <button type="button" id="play" aria-pressed="false" aria-label="播放萨克斯"><span class="ico"></span></button>
+    <canvas id="wave" aria-label="音轨进度，点击跳转"></canvas>
+    <span class="time" id="time">Saxlele</span>
+  </div>
 
   <dialog class="qr" id="qr" aria-label="Adrian.Punk 微信二维码">
-    <img src="/img/wechat-qr.jpg" alt="Adrian.Punk 微信二维码" width="280" height="280" />
+    <img src="/img/wechat-qr.jpg" alt="Adrian.Punk 微信二维码" width="240" height="240" />
     <p class="micro">微信扫一扫 · 添加 Adrian.Punk</p>
     <button class="micro" type="button" data-close>Close</button>
   </dialog>

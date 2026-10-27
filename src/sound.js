@@ -1,5 +1,5 @@
 // Adrian's own sax recording, off by default. An AnalyserNode turns it into
-// band levels (0..1) that the LED panel, the About equalizer and the dock all read.
+// band levels (0..1) that the LED panel in the camera head reads.
 const audio = new Audio(`${import.meta.env.BASE_URL}audio/saxlele.mp3`);
 audio.loop = true;
 audio.preload = 'none';
@@ -25,6 +25,13 @@ export const sound = {
   get time() { return audio.currentTime; },
   get duration() { return audio.duration || 0; },
   onChange(fn) { listeners.add(fn); },
+
+  // Jump to a fraction of the track; starts playback if it was off.
+  seek(f) {
+    if (audio.duration) audio.currentTime = f * audio.duration;
+    else audio.addEventListener('loadedmetadata', () => { audio.currentTime = f * audio.duration; }, { once: true });
+    if (!on) this.toggle();
+  },
 
   async toggle() {
     on = !on;

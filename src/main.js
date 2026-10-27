@@ -25,6 +25,7 @@ const canvas = document.getElementById('scene');
 const nameEl = document.getElementById('heroName');
 const iris = document.getElementById('iris');
 const hud = document.getElementById('hud');
+const aperture = document.getElementById('aperture');
 const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -149,6 +150,21 @@ function endDistance() {
   return (LENS.radius * 0.7) /(halfTan * Math.sqrt(1 + camera.aspect * camera.aspect));
 }
 
+// Six-bladed shutter: a hexagon that grows and turns as it opens, until it clears the corners.
+function setAperture(a) {
+  if (a <= 0) { aperture.style.clipPath = 'polygon(50% 50%, 50% 50%, 50% 50%)'; return; }
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const R = (a * Math.hypot(w, h)) / 2 / Math.cos(Math.PI / 6);
+  const turn = (1 - a) * (Math.PI / 3);
+  const pts = [];
+  for (let i = 0; i < 6; i++) {
+    const ang = turn + (i * Math.PI) / 3;
+    pts.push(`${(w / 2 + R * Math.cos(ang)).toFixed(1)}px ${(h / 2 + R * Math.sin(ang)).toFixed(1)}px`);
+  }
+  aperture.style.clipPath = `polygon(${pts.join(',')})`;
+  aperture.firstElementChild.style.opacity = 1 - smooth(0.6, 0.95, a);
+}
+
 let visible = true;
 new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(hero);
 
@@ -165,7 +181,7 @@ function frame(now) {
   pointer.sy += (pointer.y - pointer.sy) * (1 - Math.exp(-4 * dt));
 
   const p = smoothed;
-  const t = easeInOut(clamp(p / 0.9));
+  const t = easeInOut(clamp(p / 0.78));
   const d0 = startDistance(), d1 = endDistance();
   const d = d0 * Math.pow(d1 / d0, t); // log-distance dolly: constant perceived speed
   const approach = (d0 - d) / (d0 - d1); // 0 far → 1 at the lens
@@ -186,7 +202,7 @@ function frame(now) {
 
   led.state.gazeX = pointer.sx * free;
   led.state.gazeY = pointer.sy * free;
-  led.state.close = smooth(0.8, 0.93, p);
+  led.state.close = smooth(0.68, 0.8, p);
   led.state.eq = sound.levels(8);
   led.draw(now);
 
@@ -196,7 +212,8 @@ function frame(now) {
   nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, p);
   hud.style.opacity = 1 - smooth(0, 0.12, p);
-  iris.style.opacity = smooth(0.88, 0.99, p);
+  iris.style.opacity = smooth(0.76, 0.84, p);
+  setAperture(smooth(0.86, 1, p));
 
   renderer.render(scene, camera);
 }

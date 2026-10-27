@@ -22,8 +22,9 @@ npm run build   # 输出到 dist/
 - `src/led.js` — 镜头里的点阵 LED 眼睛（跟随鼠标、眨眼、推进时闭眼）
 - `src/content.js` — 全站文案与数据（履历、工具、作品、报价、链接），改内容只改这里
 - `src/render.js` — 把 content.js 渲染成各页
-- `src/sound.js` — 背景萨克斯（默认关闭）与频谱，驱动 LED 均衡器
-- `src/ui.js` — 光标、时钟、滚动渐显、声音按钮
+- `src/sound.js` — 萨克斯音轨（默认关闭）与频谱，驱动镜头里的 LED 均衡器
+- `src/ui.js` — 光标、时钟、滚动渐显、波形播放器
+- `src/waveform.json` — 音轨波形（换音频后需重新生成）
 - `public/models/camera_head_sax.glb` — 3D 模型
 - `public/audio/saxlele.mp3` — Adrian 自己的萨克斯录音
 - `public/tapes/`、`public/sessions/` — 工具录像带封面、X 作品封面

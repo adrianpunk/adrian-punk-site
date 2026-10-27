@@ -5,107 +5,116 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const ext = 'target="_blank" rel="noopener noreferrer"';
 const $ = (id) => document.getElementById(id);
 
-const FIRST_SESSIONS = 12;
+const FIRST_SESSIONS = 8;
 const CATEGORIES = [
   { id: 'all', label: 'All' },
   { id: 'design', label: '设计提示词' },
   { id: 'tutorial', label: '小白教程' },
 ];
 
+// X post ids are snowflakes: the top bits are a millisecond timestamp.
+const postDate = (href) => {
+  const id = href.match(/status\/(\d+)/)?.[1];
+  if (!id) return '';
+  const d = new Date(Number(BigInt(id) >> 22n) + 1288834974657);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Everything the viewfinder can frame, in page order.
+const shots = [
+  ...tools.map((t) => ({ img: `${BASE}${t.tape}`, code: t.code, meta: t.role })),
+  ...sessions.map((s, i) => ({ img: `${BASE}${s.cover}`, code: `${String(i + 1).padStart(2, '0')}A · ${postDate(s.href)}`, meta: s.meta })),
+];
+
 export function renderContent() {
-  $('credits').innerHTML = credits.map((c, i) => `
-    <li class="credit reveal ${i % 2 ? 'd1' : ''}">
-      <span class="no micro">${c.no}</span>
-      <div class="who"><h3>${esc(c.title)}</h3><p class="micro">${esc(c.role)}</p></div>
-      <p class="story">${esc(c.story)}</p>
-      <p class="tags micro">${c.tags.map(esc).join(' / ')}</p>
-    </li>`).join('');
+  $('credits').innerHTML = credits.map((c) => `
+    <li class="reveal"><span class="no micro">${c.no}</span><b>${esc(c.title)}</b><span>${esc(c.role)}</span></li>`).join('');
 
-  $('tracklist').innerHTML = tools.map((t) => `
-    <li class="track reveal" data-tape="${BASE}${t.tape}">
-      <a href="${t.href}" ${ext}>
-        <span class="code micro">${t.code}</span>
-        <span class="title">${esc(t.title)}</span>
-        <span class="role micro">${esc(t.role)}</span>
-        <span class="go micro">Open ↗</span>
-        <span class="detail">
-          <img class="tape-inline" src="${BASE}${t.tape}" alt="${esc(t.title)} 录像带封面" loading="lazy" />
-          <span class="copy">${esc(t.copy)}</span>
-          <span class="demo micro">${esc(t.demo)}</span>
-          <span class="scenes">${t.scenes.map((s) => `<i>${esc(s)}</i>`).join('')}</span>
-        </span>
-      </a>
-    </li>`).join('');
+  $('tools').innerHTML = tools.map((t, i) => `
+    <li><a href="${t.href}" ${ext} data-shot="${i}">
+      <span class="k micro">${t.code}</span>
+      <span class="t"><img class="thumb tape" src="${BASE}${t.tape}" alt="" loading="lazy" />${esc(t.title)}<small>${esc(t.copy)}</small></span>
+      <span class="x">↗</span>
+    </a></li>`).join('');
 
-  renderSessions('all', false);
-  $('filters').innerHTML = CATEGORIES.map((c, i) => {
-    const n = c.id === 'all' ? sessions.length : sessions.filter((s) => s.category === c.id).length;
-    return `<button type="button" role="tab" aria-selected="${i === 0}" data-cat="${c.id}">${c.label} <sup>${n}</sup></button>`;
-  }).join('');
+  $('filters').innerHTML = CATEGORIES.map((c, i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-cat="${c.id}">${c.label}</button>`).join('');
+  let cat = 'all', all = false;
+  const draw = () => renderSessions(cat, all);
   $('filters').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-cat]');
     if (!btn) return;
     $('filters').querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b === btn));
-    renderSessions(btn.dataset.cat, false);
+    cat = btn.dataset.cat;
+    all = false;
+    draw();
   });
-  $('moreSessions').addEventListener('click', () => {
-    const cat = $('filters').querySelector('[aria-selected="true"]')?.dataset.cat || 'all';
-    renderSessions(cat, true);
-  });
+  $('moreSessions').addEventListener('click', () => { all = true; draw(); });
+  draw();
 
-  $('tickets').innerHTML = parlour.map((p, i) => `
-    <article class="ticket reveal ${i ? 'd1' : ''}">
-      <div class="stub micro"><span>No. ${p.no}</span><span>Admit one</span></div>
-      <div class="body">
-        <p class="micro name">${esc(p.name)}</p>
-        <h3>${esc(p.zh)}</h3>
-        <p class="price"><b>¥${p.price}</b><span class="micro"> / 小时</span></p>
-        <ul>${p.topics.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
-        <button class="book micro" type="button" data-qr>微信预约 →</button>
-      </div>
-    </article>`).join('');
+  $('rates').innerHTML = parlour.map((p) => `
+    <li class="reveal">
+      <span class="k micro">No. ${p.no}</span>
+      <h3>${esc(p.zh)}<small class="micro">${esc(p.name)}</small></h3>
+      <p>${p.topics.map(esc).join(' · ')}</p>
+      <span class="price">¥${p.price}<span> / 小时</span></span>
+    </li>`).join('');
 
-  $('links').innerHTML = links.map((l) => `
-    <li class="reveal"><a href="${l.href}" ${ext}><span class="micro">${esc(l.label)}</span><b>${esc(l.handle)}</b><span class="arr">↗</span></a></li>`).join('') +
-    `<li class="reveal"><button type="button" data-qr><span class="micro">微信</span><b>扫码添加</b><span class="arr">→</span></button></li>`;
+  $('links').innerHTML = links.map((l) => `<li><a class="u" href="${l.href}" ${ext}><span>${esc(l.label)}</span><b>${esc(l.handle)}</b></a></li>`).join('') +
+    `<li><button class="u" type="button" data-qr><span>微信</span><b>扫码添加</b></button></li>`;
 
-  // WeChat QR dialog, opened from the tickets and the links.
   const qr = $('qr');
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-qr]')) qr.showModal();
     else if (e.target.closest('[data-close]') || e.target === qr) qr.close();
   });
 
-  initTapeFloat();
+  initViewfinder();
 }
 
 function renderSessions(cat, all) {
   const list = sessions.filter((s) => cat === 'all' || s.category === cat);
   const shown = all ? list : list.slice(0, FIRST_SESSIONS);
-  $('sheet').innerHTML = shown.map((s, i) => `
-    <a class="frame ${i === 0 && cat === 'all' ? 'is-new' : ''}" href="${s.href}" ${ext}>
-      <span class="strip"><img src="${BASE}${s.cover}" alt="" loading="lazy" /></span>
-      <span class="cap"><span class="micro">${String(sessions.indexOf(s) + 1).padStart(2, '0')}A ▸ ${esc(s.meta)}</span><b>${esc(s.title)}</b></span>
-    </a>`).join('');
+  $('sessions').innerHTML = shown.map((s) => {
+    const i = sessions.indexOf(s);
+    return `
+    <li><a href="${s.href}" ${ext} data-shot="${tools.length + i}">
+      <span class="k micro">${postDate(s.href).slice(2)}</span>
+      <span class="t">${esc(s.title)}<img class="thumb" src="${BASE}${s.cover}" alt="" loading="lazy" /></span>
+      <span class="x">↗</span>
+    </a></li>`;
+  }).join('');
   $('moreSessions').hidden = shown.length >= list.length;
+  $('moreSessions').textContent = `Show all ${list.length}`;
 }
 
-// On pointer devices the tape cassette floats beside the cursor while hovering a track.
-function initTapeFloat() {
-  const float = $('tapeFloat');
-  if (!matchMedia('(pointer: fine)').matches) return;
-  let x = 0, y = 0, raf = 0;
-  const place = () => { raf = 0; float.style.transform = `translate(${x + 28}px, ${y - 120}px) rotate(-6deg)`; };
-  $('tracklist').addEventListener('pointerover', (e) => {
-    const track = e.target.closest('.track');
-    if (!track) return;
-    if (float.getAttribute('src') !== track.dataset.tape) float.src = track.dataset.tape;
-    float.classList.add('is-on');
+// One sticky frame frames whatever row you point at: a quick defocus, then the new shot snaps sharp.
+function initViewfinder() {
+  const frame = $('vfFrame'), img = $('vfImg');
+  let current = -1, timer = 0;
+  const show = (i) => {
+    if (i === current) return;
+    current = i;
+    const s = shots[i];
+    document.querySelectorAll('.rows a.is-active').forEach((a) => a.classList.remove('is-active'));
+    document.querySelector(`.rows a[data-shot="${i}"]`)?.classList.add('is-active');
+    frame.classList.add('is-focusing');
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      img.src = s.img;
+      $('vfCode').textContent = s.code;
+      $('vfMeta').textContent = s.meta;
+      $('vfCount').textContent = `${String(i + 1).padStart(2, '0')} / ${shots.length}`;
+      const done = () => frame.classList.remove('is-focusing');
+      if (img.complete) requestAnimationFrame(done); else img.onload = done;
+    }, 160);
+  };
+  document.querySelector('.index-lists').addEventListener('pointerover', (e) => {
+    const a = e.target.closest('a[data-shot]');
+    if (a) show(+a.dataset.shot);
   });
-  $('tracklist').addEventListener('pointerleave', () => float.classList.remove('is-on'));
-  addEventListener('scroll', () => float.classList.remove('is-on'), { passive: true });
-  $('tracklist').addEventListener('pointermove', (e) => {
-    x = e.clientX; y = e.clientY;
-    if (!raf) raf = requestAnimationFrame(place);
-  }, { passive: true });
+  document.querySelector('.index-lists').addEventListener('focusin', (e) => {
+    const a = e.target.closest('a[data-shot]');
+    if (a) show(+a.dataset.shot);
+  });
+  show(0);
 }
