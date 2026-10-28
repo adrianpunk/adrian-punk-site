@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Adrian.Punk — Live at the Lens</title>
-  <meta name="description" content="Adrian.Punk — AI 视觉创作者、创作系统搭建者。一张关于增长、科学、AI 与萨克斯的现场专辑。" />
+  <title>Adrian.Punk</title>
+  <meta name="description" content="Adrian.Punk — AI 视觉创作者、创作系统搭建者。把经验拆成问题、变量与系统，再用 AI 把想象力变成看得见的作品。" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@0,800;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
@@ -19,13 +19,13 @@
   <div class="iris" id="iris" aria-hidden="true"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <header class="hero" id="top" data-face="hero" data-bg="#1c38d4" data-ink="#f4f2ee">
+  <header class="hero" id="top" data-face="hero" data-bg="#fff">
     <div class="stage" id="stage">
       <div class="hero-name" id="heroName" aria-label="Adrian.Punk"><span>Adrian<span class="dot">.</span>Punk</span></div>
       <div class="hud" id="hud">
         <div class="corner tl micro brand"><i></i><span>Adrian.Punk</span></div>
         <nav class="corner tr micro" aria-label="Main">
-          <ul><li><a href="#notes">Notes</a></li><li><a href="#tools">Side A</a></li><li><a href="#sessions">Side B</a></li><li><a href="#contact">Jam</a></li></ul>
+          <ul><li><a href="#notes">About</a></li><li><a href="#tools">Tools</a></li><li><a href="#sessions">Writing</a></li><li><a href="#contact">Contact</a></li></ul>
         </nav>
         <div class="corner bl micro clock"><span class="live">●</span><span class="time" id="clock">--:--:--</span><span>Shanghai</span></div>
         <div class="corner bc micro scroll-hint"><span>Scroll into the lens</span><div class="line"></div></div>
@@ -35,36 +35,33 @@
   </header>
 
   <main>
-    <!-- Track 01: a Blue Note–style cover. Cobalt, huge condensed type, liner notes, personnel. -->
-    <section id="notes" class="sec notes" data-face="notes" data-bg="#1c38d4" data-ink="#f4f2ee">
+    <section id="notes" class="sec notes" data-face="notes" data-bg="#fff">
       <div class="col">
-        <p class="cat micro reveal">BLP-0115 · Side A · Track 01</p>
-        <h1 class="bn reveal d1" aria-label="Live at the Lens"><span class="l1">Live</span><span class="l2">at the</span><span class="l3">Lens</span></h1>
-        <p class="presents reveal d2"><b>Adrian.Punk</b> Quintet</p>
-        <p class="liner reveal">我把经验拆成<em>问题、变量与系统</em>，再用 AI 把想象力变成看得见的作品。</p>
-        <p class="liner-sub reveal">AI 视觉创作者，也是创作系统的搭建者。这张唱片由五段经历合奏而成——工作之外，我吹萨克斯。</p>
-        <div class="personnel">
-          <h2 class="micro reveal">Personnel</h2>
-          <ol id="credits"></ol>
-        </div>
+        <p class="label micro reveal"><i></i>01 — About</p>
+        <h1 class="statement reveal d1">我把经验拆成<em>问题、变量与系统</em>，再用 AI 把想象力变成看得见的作品。</h1>
+        <p class="lede reveal d2">AI 视觉创作者，也是创作系统的搭建者。做过用户增长、疫苗研发质量和管理科学——工作之外，我吹萨克斯。</p>
+        <dl class="stats reveal">
+          <div><dt class="micro">Chapters</dt><dd>05</dd></div>
+          <div><dt class="micro">Tools</dt><dd>04</dd></div>
+          <div><dt class="micro">Writing on X</dt><dd>24<span>+</span></dd></div>
+        </dl>
+        <ol class="credits" id="credits"></ol>
       </div>
     </section>
 
-    <!-- Side A: four tapes standing on a shelf. -->
-    <section id="tools" class="sec tools" data-face="index" data-bg="#f4f2ee" data-ink="#111">
+    <section id="tools" class="sec tools" data-face="index" data-bg="#fff">
       <div class="col">
-        <p class="cat micro reveal">Side A · Tools you can use today</p>
-        <h2 class="bn bn-ink reveal d1"><span class="l1">Side</span><span class="l3">A<span class="dot">.</span></span></h2>
+        <p class="label micro reveal"><i></i>02 — Tools</p>
+        <h2 class="title reveal d1">今天就能用的工具<span class="dot">.</span></h2>
         <ol class="shelf" id="shelf"></ol>
       </div>
     </section>
 
-    <!-- Side B: sessions on X, pinned and scrolled sideways like flipping through a crate. -->
-    <section id="sessions" class="sessions" data-face="sessions" data-bg="#0d0d0d" data-ink="#f4f2ee">
+    <section id="sessions" class="sessions" data-face="sessions" data-bg="#0a0a0a">
       <div class="crate" id="crate">
         <div class="crate-head">
-          <p class="cat micro">Side B · Sessions recorded on X</p>
-          <h2 class="bn"><span class="l1">Side</span><span class="l3">B<span class="dot">.</span></span></h2>
+          <p class="label micro"><i></i>03 — Writing</p>
+          <h2 class="title">写在 X 上<span class="dot">.</span></h2>
           <div class="filters micro" id="filters" role="tablist" aria-label="筛选"></div>
           <p class="micro crate-count"><span id="crateNow">01</span> / <span id="crateTotal">24</span></p>
         </div>
@@ -72,25 +69,28 @@
       </div>
     </section>
 
-    <section id="parlour" class="sec parlour" data-face="parlour" data-bg="#ffb650" data-ink="#111">
+    <section id="parlour" class="sec parlour" data-face="parlour" data-bg="#fff">
       <div class="col">
-        <p class="cat micro reveal">Bonus track · By appointment</p>
-        <h2 class="bn bn-ink reveal d1"><span class="l2">Punk’s</span><span class="l1">Parlour</span></h2>
+        <p class="label micro reveal"><i></i>04 — Parlour</p>
+        <h2 class="title reveal d1">约我聊一小时<span class="dot">.</span></h2>
         <ol class="rates" id="rates"></ol>
         <p class="rates-foot micro reveal"><span>CNY · 按小时计费</span><button type="button" data-qr>微信预约 →</button></p>
       </div>
     </section>
 
-    <section id="contact" class="sec contact" data-face="contact" data-bg="#0d0d0d" data-ink="#f4f2ee">
+    <section id="contact" class="sec contact" data-face="contact" data-bg="#0a0a0a">
       <div class="col">
-        <p class="cat micro reveal">Encore</p>
-        <h2 class="bn jam reveal d1"><span class="l1">Let’s</span><span class="l3">Jam<span class="dot">.</span></span></h2>
+        <p class="label micro reveal"><i></i>05 — Contact</p>
+        <h2 class="title jam reveal d1">Let’s jam<span class="dot">.</span></h2>
         <ul class="links" id="links"></ul>
       </div>
     </section>
   </main>
 
-  <footer class="micro" data-face="contact" data-bg="#0d0d0d" data-ink="#f4f2ee"><span>℗ 2026 Adrian.Punk · BLP-0115</span><a href="#top">Back to the lens ↑</a><span>Sax, camera &amp; code by Adrian.Punk</span></footer>
+  <footer data-face="contact" data-bg="#0a0a0a">
+    <div class="foot-row micro"><span>© 2026 Adrian.Punk</span><span>Shanghai</span><a href="#top">Back to top ↑</a></div>
+    <p class="foot-name" aria-hidden="true">Adrian<span class="dot">.</span>Punk</p>
+  </footer>
 
   <!-- The music: one line, plus a tiny copy of his LED face. -->
   <div class="player micro" id="player">

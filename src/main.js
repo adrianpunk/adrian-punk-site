@@ -198,7 +198,8 @@ function frame(now) {
 
   const p = smoothed;
   const companion = p > 0.85; // switched while the iris is fully dark
-  const showFigure = !companion || wide.matches;
+  // He steps aside for the Writing strip, which needs the full width.
+  const showFigure = !companion || (wide.matches && face.section !== 'sessions');
   canvas.style.opacity = showFigure ? '' : '0';
   backdrop.style.opacity = companion ? 1 : 0;
   const t = easeInOut(clamp(p / 0.78));

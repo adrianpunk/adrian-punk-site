@@ -89,11 +89,11 @@ function initPlayer() {
     for (let i = 0; i < n; i++) {
       const v = peaks[Math.floor((i / n) * peaks.length)];
       const bh = Math.max(2, v * h);
-      ctx.fillStyle = i / n < progress ? '#111' : 'rgba(17,17,17,.2)';
+      ctx.fillStyle = i / n < progress ? '#0a0a0a' : 'rgba(10,10,10,.18)';
       ctx.fillRect(i * (w / n), (h - bh) / 2, 1.5, bh);
     }
     if (sound.playing || progress > 0) {
-      ctx.fillStyle = '#c8372b';
+      ctx.fillStyle = '#ff5b14';
       ctx.fillRect(Math.round(progress * w), 0, 1.5, h);
     }
   }

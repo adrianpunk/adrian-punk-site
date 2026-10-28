@@ -102,8 +102,8 @@ export function createLED() {
           if (lit && half >= 3 && (y === cy - half || y === cy + half - 1) && [9, 12, 19, 22].includes(x - gx)) lit = false;
         }
         ctx.shadowBlur = lit ? 10 : 0;
-        ctx.shadowColor = 'rgba(255,157,45,.55)';
-        ctx.fillStyle = lit ? '#ffb650' : '#21190f';
+        ctx.shadowColor = 'rgba(255,91,20,.6)';
+        ctx.fillStyle = lit ? '#ff6a24' : '#22140c';
         ctx.beginPath();
         ctx.arc(x * CELL + CELL / 2, y * CELL + CELL / 2, lit ? CELL * 0.31 : CELL * 0.24, 0, Math.PI * 2);
         ctx.fill();
