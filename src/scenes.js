@@ -9,20 +9,21 @@ const ORANGE = 0xff5b14;
 const smooth = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
-// A flat text card: lines of [text, font, colour], drawn left- or centre-aligned.
-function textPlane(lines, { width = 2, px = 1024, align = 'left', pad = 0 } = {}) {
+// A flat text card: lines of [text, font, colour], drawn left- or centre-aligned, optionally on a filled card.
+function textPlane(lines, { width = 2, px = 1024, align = 'left', pad = 0, bg = null } = {}) {
   const c = document.createElement('canvas');
   c.width = px;
   const sizes = lines.map(([, font]) => +font.match(/(\d+)px/)[1]);
   c.height = Math.ceil(sizes.reduce((a, s) => a + s * 1.25, 0) + pad * 2);
   const ctx = c.getContext('2d');
+  if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, c.width, c.height); }
   ctx.textAlign = align;
   let y = pad;
   lines.forEach(([text, font, color], i) => {
     y += sizes[i] * 1.05;
     ctx.font = font;
     ctx.fillStyle = color;
-    ctx.fillText(text, align === 'center' ? px / 2 : 0, y);
+    ctx.fillText(text, align === 'center' ? px / 2 : pad, y);
     y += sizes[i] * 0.2;
   });
   const tex = new THREE.CanvasTexture(c);
@@ -88,44 +89,68 @@ export function createAboutScene() {
   return { scene, camera, resize, update, duration: 4.2 };
 }
 
-// 02 Tools: the four tapes floating over black plinths, turning toward you as you pass.
+// 02 Tools: an assembly line of four machines. Into each goes what you bring (a white card),
+// out comes what it makes (an orange card) — the same input → output each tool promises.
 export function createToolsScene() {
-  const { scene, camera, resize } = base(0xf4f4f4, [8, 20]);
+  const { scene, camera, resize } = base(0xf4f4f4, [9, 22]);
   const black = new THREE.MeshLambertMaterial({ color: 0x0c0c0c });
-  const loader = new THREE.TextureLoader();
-  const tapes = tools.map((tl, i) => {
-    const x = (i - 1.5) * 1.5;
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), black);
-    plinth.position.set(x, 0.45, 0);
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.012), new THREE.MeshBasicMaterial({ color: ORANGE, toneMapped: false }));
-    glow.position.set(x, 0.75, 0.452);
-    const tape = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 1), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, side: THREE.DoubleSide }));
-    loader.load(`${BASE}${tl.tape}`, (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tape.material.map = tex;
-      tape.material.needsUpdate = true;
-      tape.scale.y = (0.7 * tex.image.height) / tex.image.width / 1;
-    });
-    tape.position.set(x, 1.55, 0);
-    const label = textPlane([[tl.code, MONO(56), '#ff5b14'], [tl.title, BOLD(110), '#ffffff']], { width: 1.2, align: 'center' });
-    label.position.set(x, 0.62, 0.47);
-    label.scale.setScalar(0.85);
-    scene.add(plinth, glow, tape, label);
-    return { tape, x, phase: i * 1.3 };
+  const GAP = 2.8, BELT_Y = 0.62;
+  const span = (tools.length - 1) * GAP;
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(span + 3.4, 0.04, 0.5), new THREE.MeshLambertMaterial({ color: 0x2a2a2a }));
+  belt.position.set(0, BELT_Y - 0.02, 0);
+  scene.add(belt);
+  for (const z of [-0.26, 0.26]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(span + 3.4, 0.03, 0.02), new THREE.MeshBasicMaterial({ color: ORANGE }));
+    rail.position.set(0, BELT_Y + 0.005, z);
+    scene.add(rail);
+  }
+  for (let x = -span / 2 - 1.5; x <= span / 2 + 1.5; x += 1.2) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, BELT_Y - 0.04, 0.4), black);
+    leg.position.set(x, (BELT_Y - 0.04) / 2, 0);
+    scene.add(leg);
+  }
+
+  const machines = tools.map((tl, i) => {
+    const x = i * GAP - span / 2;
+    const steps = tl.demo.split('→').map((v) => v.trim());
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.05, 0.9), black);
+    body.position.set(x, BELT_Y + 0.52, 0);
+    const mouth = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshBasicMaterial({ color: ORANGE, toneMapped: false }));
+    mouth.position.set(x, BELT_Y + 0.15, 0.452);
+    const label = textPlane([[`${tl.code}  ${tl.role}`, MONO(44), '#ff5b14'], [tl.title, BOLD(120), '#ffffff']], { width: 1.1, align: 'center' });
+    label.position.set(x, BELT_Y + 0.72, 0.452);
+    // Middle steps, if any, sit on top of the machine like a little display.
+    const middle = steps.slice(1, -1).join(' → ');
+    if (middle) {
+      const screen = textPlane([[middle, SANS(64), '#0a0a0a']], { width: 1.5, align: 'center', bg: '#ffffff', pad: 18 });
+      screen.position.set(x, BELT_Y + 1.32, 0);
+      screen.scale.setScalar(0.75);
+      scene.add(screen);
+    }
+    const input = textPlane([[steps[0], SANS(70), '#0a0a0a']], { width: 1.05, align: 'center', bg: '#ffffff', pad: 26 });
+    const output = textPlane([[steps[steps.length - 1], SANS(70), '#ffffff']], { width: 1.05, align: 'center', bg: '#ff5b14', pad: 26 });
+    scene.add(input, output); // standing up on the belt, facing you
+    scene.add(body, mouth, label);
+    return { x, input, output, phase: i * 0.37 };
   });
 
   function update(t, pointer, now) {
     const k = ease(t);
-    const a = -0.7 + k * 1.4; // sweep from left to right
-    const r = 6.2 - k * 1.6;
-    camera.position.set(Math.sin(a) * r + pointer.sx * 0.2, 1.5 + (1 - k) * 0.6 - pointer.sy * 0.1, Math.cos(a) * r);
-    camera.lookAt(0, 1.1, 0);
-    for (const tp of tapes) {
-      tp.tape.position.y = 1.55 + Math.sin(now * 0.0015 + tp.phase) * 0.06;
-      tp.tape.rotation.y = Math.atan2(camera.position.x - tp.x, camera.position.z) * 0.8 + Math.sin(now * 0.001 + tp.phase) * 0.12;
+    const x = -span / 2 - 1.2 + (span + 2.4) * k; // travel along the line
+    camera.position.set(x + pointer.sx * 0.3, 2.3 - pointer.sy * 0.15, 4.6 - Math.sin(k * Math.PI) * 0.6);
+    camera.lookAt(x + 0.4, 1, 0);
+    for (const m of machines) {
+      // One loop: the input slides in from the left, the output slides out to the right.
+      const c = (now / 3200 + m.phase) % 1;
+      const inX = m.x - 1.3 + smooth(0, 0.45, c) * 1.3;
+      const outX = m.x + smooth(0.5, 0.95, c) * 1.3;
+      m.input.position.set(inX, BELT_Y + 0.1, 0.1);
+      m.output.position.set(outX, BELT_Y + 0.1, 0.1);
+      m.input.visible = c < 0.42; // swallowed by the machine
+      m.output.visible = c > 0.55;
     }
   }
-  return { scene, camera, resize, update, duration: 4 };
+  return { scene, camera, resize, update, duration: 4.2 };
 }
 
 // 04 Parlour: a table for two under one orange lamp, the two ways to book on the table.

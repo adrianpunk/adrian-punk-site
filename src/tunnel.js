@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { tools, sessions } from './content.js';
+import { sessions } from './content.js';
 
-// Inside the lens: a dark vortex lined with every work — the four tools, then the sessions —
+// A dark vortex lined with every session on X,
 // twisting slowly around the flight path. A white hexagon at the far end is the way out.
 const BASE = import.meta.env.BASE_URL;
 const SPACING = 1.05; // metres along -z between consecutive works
@@ -44,7 +44,6 @@ export function createTunnel() {
   const camera = new THREE.PerspectiveCamera(58, 1, 0.05, 60);
 
   const works = [
-    ...tools.map((t, i) => ({ img: t.tape, href: t.href, no: two(i + 1), sub: t.code, title: t.title, tape: true })),
     ...sessions.map((s, i) => ({ img: s.cover, href: s.href, no: two(i + 1), sub: s.meta, title: s.title })),
   ];
   const depth = -START_Z + (works.length - 1) * SPACING;
@@ -64,12 +63,12 @@ export function createTunnel() {
     g.position.set(Math.cos(angle) * RADIUS, Math.sin(angle) * RADIUS, z);
     g.lookAt(0, 0, z + 1.6); // face the axis, angled toward the approaching camera
 
-    const width = w.tape ? 0.62 : 1.3;
+    const width = 1.3;
     const cover = new THREE.Mesh(
       new THREE.PlaneGeometry(1, 1),
       new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, toneMapped: false, side: THREE.DoubleSide })
     );
-    cover.scale.set(width, width * (w.tape ? 1.45 : 0.4), 1);
+    cover.scale.set(width, width * 0.4, 1);
     loader.load(`${BASE}${w.img}`, (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       cover.material.map = tex;

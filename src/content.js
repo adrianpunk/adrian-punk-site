@@ -10,10 +10,10 @@ export const credits = [
 ];
 
 export const tools = [
-  { code: 'AP-01', title: 'Punk Skill', role: 'Visual generation suite', copy: '面向 AI Agent 的视觉生成 Skill 集合，用来制作封面、头像，并稳定统一的个人视觉风格。', scenes: ['文章与产品封面', '个人头像与视觉身份', '系列内容统一风格'], demo: '主题 + 人物素材 → 封面、头像与成套视觉资产', tape: 'tapes/punk-skill.webp', href: 'https://github.com/adrianpunk/Punk-Skill' },
-  { code: 'AP-02', title: 'IP Illustrations', role: 'Personal IP module', copy: '从一张照片建立可复用的个人 IP，让同一个角色持续进入文章插图和不同叙事场景。', scenes: ['长文配图', '教程场景插画', '个人 IP 连续叙事'], demo: '一张人物照片 → 角色设定 → 一致的场景插画', tape: 'tapes/punk-ip.webp', href: 'https://github.com/adrianpunk/punk-ip-illustrations' },
-  { code: 'AP-03', title: 'XHS Cards', role: 'Knowledge card module', copy: '把个人 IP 与 Markdown 教程转换成自适应的小红书知识卡片，兼顾信息层级与发布效果。', scenes: ['小红书教程', '知识型图文', '个人 IP 内容系列'], demo: 'Markdown 教程 → 带个人 IP 的多页知识卡片', tape: 'tapes/punk-xhs.webp', href: 'https://github.com/adrianpunk/punk-xhs-cards' },
-  { code: 'AP-M', title: '微排 Weipai', role: 'WeChat layout tool', copy: '把 Markdown 稿件整理成层级清楚、适合阅读和发布的微信公众号图文，减少手动排版。', scenes: ['公众号长文', '教程与复盘', '品牌内容排版'], demo: 'Markdown → 自动排版 → 微信预览 → 发布', tape: 'tapes/weipai.webp', href: 'https://weipai.iamadrianpunk.com/' },
+  { code: 'AP-01', title: 'Punk Skill', role: 'Visual generation suite', copy: '面向 AI Agent 的视觉生成 Skill 集合，用来制作封面、头像，并稳定统一的个人视觉风格。', scenes: ['文章与产品封面', '个人头像与视觉身份', '系列内容统一风格'], demo: '主题 + 人物素材 → 封面、头像与成套视觉资产', href: 'https://github.com/adrianpunk/Punk-Skill' },
+  { code: 'AP-02', title: 'IP Illustrations', role: 'Personal IP module', copy: '从一张照片建立可复用的个人 IP，让同一个角色持续进入文章插图和不同叙事场景。', scenes: ['长文配图', '教程场景插画', '个人 IP 连续叙事'], demo: '一张人物照片 → 角色设定 → 一致的场景插画', href: 'https://github.com/adrianpunk/punk-ip-illustrations' },
+  { code: 'AP-03', title: 'XHS Cards', role: 'Knowledge card module', copy: '把个人 IP 与 Markdown 教程转换成自适应的小红书知识卡片，兼顾信息层级与发布效果。', scenes: ['小红书教程', '知识型图文', '个人 IP 内容系列'], demo: 'Markdown 教程 → 带个人 IP 的多页知识卡片', href: 'https://github.com/adrianpunk/punk-xhs-cards' },
+  { code: 'AP-M', title: '微排 Weipai', role: 'WeChat layout tool', copy: '把 Markdown 稿件整理成层级清楚、适合阅读和发布的微信公众号图文，减少手动排版。', scenes: ['公众号长文', '教程与复盘', '品牌内容排版'], demo: 'Markdown → 自动排版 → 微信预览 → 发布', href: 'https://weipai.iamadrianpunk.com/' },
 ];
 
 export const sessions = [

@@ -26,10 +26,14 @@ export function renderContent() {
   $('credits').innerHTML = credits.map((c) => `
     <li class="reveal"><span class="no micro">${c.no}</span><b>${esc(c.title)}<small>${esc(c.en)}</small></b><span>${esc(c.role)}</span></li>`).join('');
 
+  // Each tool is a small machine: what goes in, the steps, what comes out.
   $('shelf').innerHTML = tools.map((t, i) => `
-    <li class="tape reveal ${i % 2 ? 'd1' : ''}"><a href="${t.href}" ${ext} data-glyph="${two(i + 1)}">
-      <span class="box"><img src="${BASE}${t.tape}" alt="${esc(t.title)} 录像带封面" loading="lazy" /></span>
-      <span class="cap"><span class="code micro">${t.code}</span><h3>${esc(t.title)}</h3><p>${esc(t.copy)}</p></span>
+    <li class="tool reveal ${i % 2 ? 'd1' : ''}"><a href="${t.href}" ${ext} data-glyph="${two(i + 1)}">
+      <span class="tool-top micro"><span>${t.code}</span><span>${esc(t.role)}</span><i></i></span>
+      <h3>${esc(t.title)}</h3>
+      <p>${esc(t.copy)}</p>
+      <ol class="flow micro">${t.demo.split('→').map((step, n) => `<li style="--i:${n}">${esc(step.trim())}</li>`).join('')}</ol>
+      <span class="tool-foot micro"><span>${t.scenes.map(esc).join(' / ')}</span><span class="arr">Open ↗</span></span>
     </a></li>`).join('');
 
   $('filters').innerHTML = CATEGORIES.map((c, i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-cat="${c.id}">${c.label}</button>`).join('');
@@ -58,7 +62,6 @@ export function renderContent() {
   });
 
   initFaceHover();
-  initTapeTilt();
   initSections();
   initCrate();
 }
@@ -78,7 +81,7 @@ function renderSessions(cat) {
   layoutCrate?.();
 }
 
-// Hovering a tape or a session puts its number on the companion's face.
+// Hovering a tool or a session puts its number on the companion's face.
 function initFaceHover() {
   document.addEventListener('pointerover', (e) => {
     const el = e.target.closest('[data-glyph]');
@@ -87,24 +90,6 @@ function initFaceHover() {
   document.addEventListener('focusin', (e) => {
     const el = e.target.closest('[data-glyph]');
     face.glyph = el ? el.dataset.glyph : null;
-  });
-}
-
-// Tapes lean toward the cursor like objects picked up off a shelf.
-function initTapeTilt() {
-  if (!matchMedia('(pointer: fine)').matches) return;
-  $('shelf').addEventListener('pointermove', (e) => {
-    const a = e.target.closest('.tape a');
-    if (!a) return;
-    const r = a.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-    const box = a.querySelector('.box');
-    box.style.setProperty('--ry', `${x * 22}deg`);
-    box.style.setProperty('--rx', `${-y * 14}deg`);
-  });
-  $('shelf').addEventListener('pointerout', (e) => {
-    const a = e.target.closest('.tape a');
-    if (a && !a.contains(e.relatedTarget)) a.querySelector('.box').style.cssText = '';
   });
 }
 
