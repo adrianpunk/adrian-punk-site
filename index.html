@@ -15,12 +15,18 @@
   <canvas id="scene" aria-label="相机头人物吹奏萨克斯的三维模型"></canvas>
   <!-- Fades to dark as the camera enters the lens. -->
   <div class="iris" id="iris" aria-hidden="true"></div>
-  <!-- Inside the lens: a corridor with a door for each part of the site. -->
+  <!-- Inside the lens: a corridor with a door for each part of the site, contact on the far wall. -->
   <div class="room-hud micro" id="roomHud" aria-hidden="true">
-    <span><i></i>Inside the lens</span>
     <span class="now" id="roomNow"><b>01</b> About</span>
-    <span class="hint" id="roomHint">Scroll to walk · Click a door to enter</span>
+    <span class="hint" id="roomHint">Scroll to walk</span>
   </div>
+  <!-- In the About and Tools worlds: the way back out. -->
+  <button type="button" class="world-back micro" id="worldBack" hidden>← 回到走廊</button>
+  <dialog class="photo-box" id="photoBox" aria-label="照片">
+    <img id="photoImg" src="" alt="" width="600" height="800" />
+    <p class="micro"><b id="photoNo"></b><span id="photoTitle"></span></p>
+    <p class="role" id="photoRole"></p>
+  </dialog>
   <div class="veil" id="veil" aria-hidden="true"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
@@ -39,7 +45,7 @@
     </div>
   </header>
 
-  <!-- Behind a door: that one section, over the corridor. Back returns to the same spot. -->
+  <!-- Behind the Writing and Parlour doors: that one page, over the corridor. Back returns to the same spot. -->
   <div class="pages" id="pages" hidden>
     <div class="page-bar micro">
       <button type="button" data-back>← 回到走廊</button>
@@ -47,37 +53,6 @@
       <span class="esc">Esc</span>
     </div>
   <main>
-    <section id="notes" class="sec notes" data-face="notes" data-bg="#fff">
-      <div class="col">
-        <figure class="portrait reveal"><img src="/img/about/ustc.jpg" alt="Adrian.Punk 在中国科学技术大学毕业" width="600" height="800" /><figcaption class="micro">USTC · 2026</figcaption></figure>
-        <p class="label micro reveal"><i></i>01 — About</p>
-        <h1 class="statement reveal d1">我把经验拆成<em>问题、变量与系统</em>，再用 AI 把想象力变成看得见的作品。</h1>
-        <p class="lede reveal d2">AI 视觉创作者，也是创作系统的搭建者。做过用户增长、疫苗研发质量和管理科学——工作之外，我吹萨克斯。</p>
-        <dl class="stats reveal">
-          <div><dt class="micro">Chapters</dt><dd>05</dd></div>
-          <div><dt class="micro">Tools</dt><dd>04</dd></div>
-          <div><dt class="micro">Writing on X</dt><dd>24<span>+</span></dd></div>
-        </dl>
-        <ol class="credits" id="credits"></ol>
-      </div>
-    </section>
-
-    <section id="tools" class="sec tools" data-face="index" data-bg="#fff">
-      <div class="col">
-        <p class="label micro reveal"><i></i>02 — Tools</p>
-        <h2 class="title reveal d1">今天就能用的工具<span class="dot">.</span></h2>
-        <p class="console-hint micro reveal d2">Four channels · 推一下推子试试</p>
-        <div class="console reveal d2">
-          <ol class="strips" id="shelf"></ol>
-          <div class="master" aria-hidden="true">
-            <span class="micro">Master</span>
-            <span class="meter big"><i></i><i></i></span>
-            <span class="micro">Adrian.Punk</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section id="sessions" class="sessions" data-face="sessions" data-bg="#0a0a0a">
       <div class="crate" id="crate">
         <div class="crate-head">
@@ -97,35 +72,6 @@
         <ol class="rates" id="rates"></ol>
         <p class="rates-foot micro reveal"><span>CNY · 按小时计费</span><button type="button" data-qr>微信预约 →</button></p>
       </div>
-    </section>
-
-    <section id="contact" class="contact" data-face="contact" data-bg="#0a0a0a">
-      <p class="jam" aria-hidden="true">Let’s jam<span class="dot">.</span></p>
-      <div class="lanyard" id="badge">
-        <span class="strap micro" aria-hidden="true">Adrian.Punk · Adrian.Punk · Adrian.Punk · Adrian.Punk · Adrian.Punk</span>
-        <span class="clip" aria-hidden="true"></span>
-        <article class="badge" aria-label="Adrian.Punk 工作牌">
-          <span class="slot" aria-hidden="true"></span>
-          <div class="photo-wrap">
-            <div class="photo">
-              <img src="/img/avatar.jpg" alt="Adrian.Punk 的像素头像" width="400" height="400" draggable="false" />
-              <span class="tag micro">All access</span>
-              <span class="tag no micro">No. 0115</span>
-            </div>
-            <svg class="sticker" viewBox="0 0 100 100" aria-hidden="true">
-              <defs><path id="ring" d="M50,50 m-35,0 a35,35 0 1,1 70,0 a35,35 0 1,1 -70,0" /></defs>
-              <circle cx="50" cy="50" r="49" />
-              <text><textPath href="#ring">BACKSTAGE · SAX · AI · BACKSTAGE · SAX · AI ·</textPath></text>
-              <circle class="dot" cx="50" cy="50" r="7" />
-            </svg>
-          </div>
-          <h2>Adrian<span class="dot">.</span>Punk</h2>
-          <p class="role micro">AI Visual Creator · Saxophone · Shanghai</p>
-          <ul class="links" id="links"></ul>
-          <span class="sheen" aria-hidden="true"></span>
-        </article>
-      </div>
-      <p class="micro contact-foot">© 2026 Adrian.Punk · 拖一下工牌</p>
     </section>
   </main>
   </div>

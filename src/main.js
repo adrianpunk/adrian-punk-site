@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLED } from './led.js';
 import { initUI } from './ui.js';
-import { renderContent, refreshCrate, dropBadge } from './render.js';
+import { renderContent, refreshCrate } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
 import { createCorridor } from './corridor.js';
@@ -39,6 +39,8 @@ const roomNow = document.getElementById('roomNow');
 const roomHint = document.getElementById('roomHint');
 const veil = document.getElementById('veil');
 const cursor = document.getElementById('cursor');
+const worldBack = document.getElementById('worldBack');
+const photoBox = document.getElementById('photoBox');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
 // ---------- Renderer / scene ----------
@@ -84,15 +86,11 @@ const ledDisc = new THREE.Mesh(
 ledDisc.position.copy(LENS.center);
 rig.add(ledDisc);
 
-// One door per part of the site, down a corridor; the porthole at the end is the lens you came in through.
-const corridor = createCorridor({
-  envMap: scene.environment,
-  ledTexture: led.texture,
-  doors,
-});
+// One door per part of the site, down a corridor; his contact card is projected on the far wall.
+const corridor = createCorridor({ envMap: scene.environment, doors });
 
-// Behind each door, a small world for that section; the Writing door opens onto the tunnel of works.
-// Contact has none: its page is the scene (a badge drops in).
+// Behind each door, a small world. About and Tools are places you stay in (no page);
+// Writing opens onto the tunnel of works, Parlour onto its table, each then on to its page.
 const tunnel = createTunnel();
 const behind = {
   notes: createAboutScene(),
@@ -154,7 +152,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  corridor.resize(w / h);
+  corridor.resize(w / h, w, h);
   Object.values(behind).forEach((b) => b.resize(w / h));
   fitName();
   readScroll();
@@ -191,13 +189,12 @@ function sectionGlyph(now) {
   if (face.section !== section) { section = face.section; sectionSince = now; }
   if (section === 'notes' && now - sectionSince < 2200) return 'HI';
   if (section === 'parlour') return '?';
-  if (section === 'contact') return 'heart';
   return null;
 }
 
 // Scroll timeline of the hero track (0..1): dive into the lens, then walk down the corridor,
-// stopping at each door. Clicking a door walks you through it into its world, then its page;
-// the page closes back to the same spot in the corridor.
+// stopping at each door and finally at the projection. Clicking a door walks you through it into
+// its world; you come back out to the same spot in the corridor.
 const DIVE = 0.3; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.26
 const ROOM_IN = 0.26;
 const WALK = [0.33, 1];
@@ -211,14 +208,14 @@ function poseAt(u) {
   const a = st[i], c = st[i + 1];
   return { x: lerp(a.x, c.x, b), z: lerp(a.z, c.z, b), yaw: lerp(a.yaw, c.yaw, b), stop: Math.round(x) };
 }
-// Window scroll position that stands you in front of door k.
+// Window scroll position that stands you in front of door k (k = doors.length: the projection).
 function stationTop(k) {
   const p = WALK[0] + ((k + 1) / (corridor.stations.length - 1)) * (WALK[1] - WALK[0]);
   return hero.offsetTop + p * (hero.offsetHeight - innerHeight);
 }
 
 // ---------- Pages: one section at a time, over the corridor ----------
-const sections = corridor.doors.map((d) => d.section);
+const sections = corridor.doors.map((d) => d.section).filter((id) => document.getElementById(id));
 let openSection = null;
 let inLens = false, flight = null, poseNow = { ...corridor.stations[0], stop: 0 };
 function openPage(section) {
@@ -236,12 +233,11 @@ function openPage(section) {
   document.documentElement.classList.add('page-open');
   face.section = el.dataset.face;
   if (section === 'sessions') refreshCrate();
-  if (section === 'contact') dropBadge();
   if (location.hash !== `#${section}`) history.replaceState(null, '', `#${section}`);
 }
 // Back to the corridor, standing in front of door k (by default the one you came out of).
 function closePage(k = corridor.doors.find((d) => d.section === openSection)?.k) {
-  veil.style.background = '#ededed';
+  veil.style.background = '#0a0a0a';
   veil.classList.add('on');
   setTimeout(() => {
     pages.hidden = true;
@@ -267,35 +263,107 @@ pages.addEventListener('click', (e) => {
   const back = e.target.closest('[data-back]');
   if (back) closePage(back.dataset.back === '' ? undefined : +back.dataset.back);
 });
-// The hero menu goes straight to a page.
+// Jump straight to stop k of the corridor (behind a veil), optionally then into its door's world.
+function jumpTo(k, then) {
+  veil.style.background = then ? '#ff5b14' : '#0a0a0a';
+  veil.classList.add('on');
+  setTimeout(() => {
+    if (openSection) { pages.hidden = true; openSection = null; }
+    flight = null;
+    worldBack.hidden = true;
+    document.documentElement.classList.remove('page-open');
+    scrollTo({ top: stationTop(k), behavior: 'instant' });
+    readScroll();
+    smoothed = progress;
+    if (then) then();
+    else requestAnimationFrame(() => veil.classList.remove('on'));
+  }, 360);
+}
+// The hero menu and #links: a page opens directly, a world is entered, contact walks you to the end.
+function go(id) {
+  if (id === 'contact') return jumpTo(corridor.doors.length);
+  const d = corridor.doors.find((x) => x.section === id);
+  if (!d || id === openSection) return;
+  if (sections.includes(id)) land(id, document.getElementById(id).dataset.bg);
+  else jumpTo(d.k, () => { flight = makeFlight(d, d.stand, performance.now() - DOOR_IN * 1000); flight.flash = true; });
+}
 document.querySelectorAll('nav a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
   e.preventDefault();
-  const id = a.getAttribute('href').slice(1);
-  land(id, document.getElementById(id).dataset.bg);
+  go(a.getAttribute('href').slice(1));
 }));
-// A link to #tools (etc.) opens that page, on load or later.
-const openFromHash = () => { const id = location.hash.slice(1); if (sections.includes(id) && id !== openSection) openPage(id); };
+const openFromHash = () => { const id = location.hash.slice(1); if (id && flight?.door.section !== id) go(id); };
 addEventListener('hashchange', openFromHash);
 openFromHash();
 
-// Clicking a door: square up to it, walk through into its world, then land on its page.
-// Once inside a world, a click, wheel, key or touch skips ahead to the page.
+// Clicking a door: square up to it and walk through into its world. A world you stay in
+// (About, Tools) is explored with scroll or drag; the others play, then land on their page
+// (a click, wheel, key or touch skips ahead).
+const makeFlight = (d, from, t0) => ({ door: d, world: behind[d.section] || null, from: { ...from }, t0, view: 0, viewTo: 0 });
 function enter(d) {
-  flight = { door: d, world: behind[d.section] || null, from: { ...poseNow }, t0: performance.now() };
+  flight = makeFlight(d, poseNow, performance.now());
 }
+const staying = () => !!(flight && flight.inside && flight.world?.interactive);
+function exitWorld() {
+  const k = flight.door.k;
+  veil.style.background = '#0a0a0a';
+  veil.classList.add('on');
+  setTimeout(() => {
+    flight = null;
+    worldBack.hidden = true;
+    document.documentElement.classList.remove('page-open');
+    history.replaceState(null, '', location.pathname + location.search);
+    scrollTo({ top: stationTop(k), behavior: 'instant' });
+    readScroll();
+    smoothed = progress;
+    requestAnimationFrame(() => veil.classList.remove('on'));
+  }, 360);
+}
+worldBack.addEventListener('click', exitWorld);
+// A chapter shows its photo; a tool opens in a new tab.
+function activate(item) {
+  if (item.href) { open(item.href, '_blank', 'noopener'); return; }
+  document.getElementById('photoImg').src = `${import.meta.env.BASE_URL}${item.photo}`;
+  document.getElementById('photoImg').alt = item.title;
+  document.getElementById('photoNo').textContent = item.no;
+  document.getElementById('photoTitle').textContent = item.title;
+  document.getElementById('photoRole').textContent = item.role;
+  photoBox.showModal();
+}
+photoBox.addEventListener('click', () => photoBox.close());
 addEventListener('click', (e) => {
-  if (!inLens || openSection || e.target.closest('a,button,.player')) return;
+  if (!inLens || openSection || e.target.closest('a,button,dialog,.player')) return;
+  const x = (e.clientX / innerWidth) * 2 - 1, y = (e.clientY / innerHeight) * 2 - 1;
+  if (staying()) { const it = flight.world.pick(x, y); if (it) activate(it); return; }
   if (flight) { skip(); return; }
-  const d = corridor.pick((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
-  if (d) enter(d);
+  const d = corridor.pick(x, y);
+  if (d) { enter(d); return; }
+  const l = corridor.pickScreen(x, y);
+  if (l?.qr) document.getElementById('qr').showModal();
+  else if (l) open(l.href, '_blank', 'noopener');
 });
 function skip() {
-  if (flight && flight.inside && !flight.landing) { flight.landing = true; land(flight.door.section, document.getElementById(flight.door.section).dataset.bg); }
+  if (flight && flight.inside && !flight.landing && !staying()) { flight.landing = true; land(flight.door.section, document.getElementById(flight.door.section).dataset.bg); }
 }
-addEventListener('wheel', skip, { passive: true });
-addEventListener('touchstart', skip, { passive: true });
+// Inside a world you stay in, scroll and swipes move you through it instead.
+const move = (d) => { flight.viewTo = clamp(flight.viewTo + d); };
+addEventListener('wheel', (e) => { if (staying()) move(e.deltaY / 1600); else skip(); }, { passive: true });
+let touch = null;
+addEventListener('touchstart', (e) => { touch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; skip(); }, { passive: true });
+addEventListener('touchmove', (e) => {
+  if (!staying() || !touch) return;
+  const dx = e.touches[0].clientX - touch.x, dy = e.touches[0].clientY - touch.y;
+  move(-(Math.abs(dx) > Math.abs(dy) ? dx : dy) / (innerHeight * 0.9));
+  touch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
 addEventListener('keydown', (e) => {
+  if (document.querySelector('dialog[open]')) return;
   if (openSection) { if (e.key === 'Escape') closePage(); return; }
+  if (staying()) {
+    if (e.key === 'Escape') exitWorld();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') move(0.12);
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') move(-0.12);
+    return;
+  }
   if (flight) { skip(); return; }
   // Enter opens the door you're standing at.
   if (inLens && e.key === 'Enter') { const d = corridor.doors[poseNow.stop - 1]; if (d) enter(d); }
@@ -337,6 +405,7 @@ function frame(now) {
   nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, pd);
   hud.style.opacity = 1 - smooth(0, 0.12, pd);
+  hud.style.visibility = pd > 0.12 ? 'hidden' : ''; // so the faded menu can't be clicked
   // The iris goes dark into the lens and opens again onto the corridor.
   iris.style.opacity = smooth(0.76, 0.84, pd) * (1 - smooth(0.27, 0.31, p));
   iris.style.visibility = flight ? 'hidden' : '';
@@ -351,9 +420,17 @@ function frame(now) {
           // No world behind this door: straight onto the page.
           if (!flight.landing) { flight.landing = true; land(flight.door.section, '#ff5b14'); }
         } else {
-          if (!flight.inside) { flight.inside = true; veil.classList.remove('on'); }
           world = flight.world;
-          wt = clamp((ft - DOOR_IN) / world.duration);
+          if (!flight.inside) {
+            flight.inside = true;
+            veil.classList.remove('on');
+            if (world.interactive) {
+              worldBack.hidden = false;
+              document.documentElement.classList.add('page-open'); // the page stays put; scroll moves the world
+              history.replaceState(null, '', `#${flight.door.section}`);
+            }
+          }
+          wt = world.interactive ? clamp((ft - DOOR_IN) / 1.8) : clamp((ft - DOOR_IN) / world.duration);
           if (wt >= 1) skip();
         }
       }
@@ -364,6 +441,15 @@ function frame(now) {
       roomHud.style.opacity = 1;
       roomHud.classList.toggle('on-light', world.scene.background.getHSL({}).l > 0.5);
       roomNow.innerHTML = `<b>${flight.door.no}</b> ${flight.door.name}`;
+      if (world.interactive) {
+        flight.view += (flight.viewTo - flight.view) * (1 - Math.exp(-5 * dt));
+        world.update(flight.view, pointer, now, dt, wt);
+        const it = world.hovered;
+        roomHint.textContent = it ? it.hint : finePointer.matches ? 'Scroll to move · Click to open · Esc' : 'Swipe to move · Tap to open';
+        cursor.classList.toggle('is-hover', !!it);
+        renderer.render(world.scene, world.camera);
+        return;
+      }
       roomHint.textContent = 'Click or scroll to skip';
       cursor.classList.remove('is-hover');
       world.update(wt, pointer, now, dt);
@@ -386,13 +472,15 @@ function frame(now) {
       pose = poseAt(clamp((p - WALK[0]) / (WALK[1] - WALK[0])));
       poseNow = pose;
     }
-    roomHud.classList.add('on-light');
+    roomHud.classList.remove('on-light');
     corridor.update({ pose, opens, pointer, dt, nudge: finePointer.matches, pickable: !flight });
     roomHud.style.opacity = flight ? 0 : smooth(0.3, 0.34, p);
     const door = corridor.doors[poseNow.stop - 1];
-    roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : '<b>00</b> Corridor';
-    roomHint.textContent = finePointer.matches ? 'Scroll to walk · Click a door to enter' : 'Swipe to walk · Tap a door to enter';
-    cursor.classList.toggle('is-hover', !!corridor.hovered);
+    const atEnd = poseNow.stop === corridor.stations.length - 1;
+    roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : atEnd ? '<b>05</b> Contact' : '';
+    roomHint.textContent = atEnd ? corridor.hoveredLink?.label ?? (finePointer.matches ? 'Click a handle · Scan the code' : 'Tap a handle · Scan the code')
+      : finePointer.matches ? 'Scroll to walk · Click a door' : 'Swipe to walk · Tap a door';
+    cursor.classList.toggle('is-hover', !!(corridor.hovered || corridor.hoveredLink));
     led.state.gazeX = pointer.sx; led.state.gazeY = pointer.sy; led.state.close = 0; led.state.glyph = null;
     led.draw(now);
     renderer.render(corridor.scene, corridor.camera);
@@ -424,4 +512,5 @@ requestAnimationFrame(frame);
 if (import.meta.env.DEV) window.__debug = { camera, ledDisc, corridor, behind, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; },
   stationTop, openPage, closePage,
   // Jump straight into the world behind door k, `at` seconds in.
-  enter(k, at = DOOR_IN) { const d = corridor.doors[k]; flight = { door: d, world: behind[d.section] || null, from: { ...d.stand }, t0: performance.now() - at * 1000, flash: true }; } };
+  enter(k, at = DOOR_IN) { const d = corridor.doors[k]; flight = makeFlight(d, d.stand, performance.now() - at * 1000); flight.flash = true; },
+  get flight() { return flight; } };

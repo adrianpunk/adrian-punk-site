@@ -1,21 +1,21 @@
 // All page copy lives here. Content comes from the adrian-punk-portfolio repo.
 // To add a session (X post): put a cover in public/sessions/ and add a row at the top of `sessions`.
 
-// The doors down the corridor, in order; each opens one section of the page.
+// The doors down the corridor, in order. About and Tools open onto a world you stay in;
+// Writing and Parlour lead on to a page. Contact is projected on the wall at the end.
 export const doors = [
   { no: '01', name: 'About', zh: '关于我', section: 'notes' },
   { no: '02', name: 'Tools', zh: '工具', section: 'tools' },
   { no: '03', name: 'Writing', zh: '写在 X 上', section: 'sessions' },
   { no: '04', name: 'Parlour', zh: '约我聊聊', section: 'parlour' },
-  { no: '05', name: 'Contact', zh: '联系我', section: 'contact' },
 ];
 
+// The four chapters laid out as a path in the About world; click one to see its photo.
 export const credits = [
   { no: '01', photo: 'img/about/growth.jpg', title: '用户增长', role: '线上教育大厂 · 用户增长负责人', en: 'Online education · User growth leader', story: '把模糊的用户需求转化为清晰的增长路径，在产品、内容与运营之间建立可以持续复用的增长方法。', tags: ['User Growth', 'Education', 'Strategy'] },
   { no: '02', photo: 'img/about/vaccine.jpg', title: '生命科学', role: '疫苗大厂 · 研发质量管理', en: 'Vaccine R&D · Quality management', story: '在复杂流程中识别风险、建立标准，并让每一个判断都可以被验证。', tags: ['Biotech', 'R&D', 'Quality'] },
   { no: '03', photo: 'img/about/ustc.jpg', title: '管理科学', role: '中国科学技术大学 · 管理科学硕士', en: 'USTC · Master of Management Science', story: '把经验拆解成问题、变量与系统——这成了我面对产品、组织与 AI 时的底层思考方式。', tags: ['USTC', 'Models', 'Systems'] },
-  { no: '04', photo: 'img/avatar.jpg', title: 'AI 视觉创作', role: 'AI 视觉创作者 · X 内容创作者', en: 'AI visual creator · X creator', story: '持续研究生成式视觉、提示词与创作工作流，在 X 上分享实验与教程，让技术成为个人表达。', tags: ['Generative AI', 'Visual', 'X Creator'] },
-  { no: '05', photo: 'img/about/talk.jpg', title: 'FDE & AI 培训', role: 'FDE · AI 企业培训', en: 'FDE · Enterprise AI training', story: '连接 AI 技术与业务场景，把工具、工作流与实践方法带进团队，让学习转化为实际应用。', tags: ['FDE', 'AI Training', 'Workflows'] },
+  { no: '04', photo: 'img/about/talk.jpg', title: 'FDE & AI 培训', role: 'FDE · AI 企业培训', en: 'FDE · Enterprise AI training', story: '连接 AI 技术与业务场景，把工具、工作流与实践方法带进团队，让学习转化为实际应用。', tags: ['FDE', 'AI Training', 'Workflows'] },
 ];
 
 export const tools = [
