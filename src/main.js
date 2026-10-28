@@ -6,6 +6,7 @@ import { initUI } from './ui.js';
 import { renderContent } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
+import { createTunnel } from './tunnel.js';
 
 renderContent();
 initUI();
@@ -30,6 +31,9 @@ const hud = document.getElementById('hud');
 const backdrop = document.getElementById('backdrop');
 const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
+const tunnelHud = document.getElementById('tunnelHud');
+const tunnelNow = document.getElementById('tunnelNow');
+const cursor = document.getElementById('cursor');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
 // ---------- Renderer / scene ----------
@@ -74,6 +78,9 @@ const ledDisc = new THREE.Mesh(
 );
 ledDisc.position.copy(LENS.center);
 rig.add(ledDisc);
+
+const tunnel = createTunnel();
+document.getElementById('tunnelTotal').textContent = String(tunnel.count).padStart(2, '0');
 
 // ---------- Load model ----------
 new GLTFLoader().load(
@@ -125,6 +132,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  tunnel.resize(w / h);
   fitName();
   readScroll();
 }
@@ -154,21 +162,6 @@ function endDistance() {
   return (LENS.radius * 0.7) /(halfTan * Math.sqrt(1 + camera.aspect * camera.aspect));
 }
 
-// Six-bladed shutter: a hexagonal hole cut into the dark iris that grows and turns as it opens,
-// revealing the companion standing on the first page's colour.
-function setAperture(a) {
-  if (a <= 0) { iris.style.clipPath = 'none'; return; }
-  const w = innerWidth, h = innerHeight;
-  const R = (a * Math.hypot(w, h)) / 2 / Math.cos(Math.PI / 6);
-  const turn = (1 - a) * (Math.PI / 3);
-  let hex = '';
-  for (let i = 0; i < 6; i++) {
-    const ang = turn + (i * Math.PI) / 3;
-    hex += `${i ? 'L' : 'M'}${(w / 2 + R * Math.cos(ang)).toFixed(1)} ${(h / 2 + R * Math.sin(ang)).toFixed(1)}`;
-  }
-  iris.style.clipPath = `path(evenodd, 'M0 0H${w}V${h}H0Z${hex}Z')`;
-}
-
 // After the hero the figure stays on as a companion in the right third (desktop only).
 const wide = matchMedia('(min-width: 901px)');
 function companionDistance() {
@@ -186,6 +179,16 @@ function sectionGlyph(now) {
   return null;
 }
 
+// Scroll timeline of the hero track (0..1):
+//   dive into the lens → fly through the works → out through the white hexagon onto the page.
+const DIVE = 0.36; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.30
+const TUNNEL_IN = 0.3, TUNNEL_OUT = 0.9;
+
+let inTunnel = false;
+addEventListener('click', (e) => {
+  if (inTunnel && tunnel.hovered && !e.target.closest('a,button,.player')) open(tunnel.hovered.href, '_blank', 'noopener');
+});
+
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
@@ -197,16 +200,43 @@ function frame(now) {
   pointer.sy += (pointer.y - pointer.sy) * (1 - Math.exp(-4 * dt));
 
   const p = smoothed;
-  const companion = p > 0.85; // switched while the iris is fully dark
+  const pd = clamp(p / DIVE); // progress of the dive itself, timed as before at the old scale
+  const companion = p > TUNNEL_OUT; // switched while the exit is fully white
+  inTunnel = p >= TUNNEL_IN && !companion;
   // He steps aside for the Writing strip, which needs the full width.
-  const showFigure = !companion || (wide.matches && face.section !== 'sessions');
+  const showFigure = inTunnel || !companion || (wide.matches && face.section !== 'sessions');
   canvas.style.opacity = showFigure ? '' : '0';
   backdrop.style.opacity = companion ? 1 : 0;
-  const t = easeInOut(clamp(p / 0.78));
+  const t = easeInOut(clamp(pd / 0.78));
   const d0 = startDistance(), d1 = endDistance();
   const d = d0 * Math.pow(d1 / d0, t); // log-distance dolly: constant perceived speed
   const approach = (d0 - d) / (d0 - d1); // 0 far → 1 at the lens
-  const free = 1 - smooth(0, 0.35, p); // pointer influence fades as we commit to the dive
+  const free = 1 - smooth(0, 0.35, pd); // pointer influence fades as we commit to the dive
+
+  // DOM layers riding the same progress.
+  const sx = +nameEl.dataset.sx || 1, sy = +nameEl.dataset.sy || 1;
+  const grow = 1 + approach * 1.6;
+  nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
+  nameEl.style.opacity = 1 - smooth(0.02, 0.3, pd);
+  hud.style.opacity = 1 - smooth(0, 0.12, pd);
+  // Dark as we enter the lens, clearing onto the tunnel; white at the exit, clearing onto the page.
+  const white = p > 0.6;
+  iris.style.background = white ? '#fff' : '';
+  iris.style.opacity = white
+    ? smooth(0.87, 0.9, p) * (1 - smooth(0.91, 0.96, p))
+    : smooth(0.76, 0.84, pd) * (1 - smooth(0.31, 0.35, p));
+  iris.style.visibility = p >= 0.999 ? 'hidden' : '';
+  const tt = clamp((p - TUNNEL_IN) / (TUNNEL_OUT - TUNNEL_IN));
+  tunnelHud.style.opacity = smooth(0.33, 0.37, p) * (1 - smooth(0.84, 0.87, p));
+  tunnelHud.style.visibility = inTunnel ? '' : 'hidden';
+
+  if (inTunnel) {
+    tunnel.update(tt, pointer, now, dt);
+    tunnelNow.textContent = String(tunnel.indexAt(tt)).padStart(2, '0');
+    cursor.classList.toggle('is-hover', !!tunnel.hovered);
+    renderer.render(tunnel.scene, tunnel.camera);
+    return;
+  }
 
   if (companion) {
     // Turned a little toward the page content, still following the pointer.
@@ -238,24 +268,14 @@ function frame(now) {
   // Eyes look toward the pointer from wherever the figure stands on screen.
   led.state.gazeX = companion ? clamp((pointer.sx - 0.54) * 1.4, -1, 1) : pointer.sx * free;
   led.state.gazeY = companion ? pointer.sy : pointer.sy * free;
-  led.state.close = companion ? 0 : smooth(0.68, 0.8, p);
+  led.state.close = companion ? 0 : smooth(0.68, 0.8, pd);
   led.state.eq = sound.levels(8);
   led.state.glyph = companion ? face.glyph ?? sectionGlyph(now) : null;
   led.draw(now);
   if (!showFigure) return;
 
-  // DOM layers riding the same progress.
-  const sx = +nameEl.dataset.sx || 1, sy = +nameEl.dataset.sy || 1;
-  const grow = 1 + approach * 1.6;
-  nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
-  nameEl.style.opacity = 1 - smooth(0.02, 0.3, p);
-  hud.style.opacity = 1 - smooth(0, 0.12, p);
-  iris.style.opacity = smooth(0.76, 0.84, p);
-  iris.style.visibility = p >= 0.999 ? 'hidden' : '';
-  setAperture(smooth(0.86, 1, p));
-
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
 
-if (import.meta.env.DEV) window.__debug = { camera, ledDisc, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };
+if (import.meta.env.DEV) window.__debug = { camera, ledDisc, tunnel, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };
