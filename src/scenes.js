@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { credits, tools, parlour, links } from './content.js';
+import { credits, tools, parlour } from './content.js';
 
 // The small worlds behind the doors. Each one is driven by t (0..1): played by a timer when you
 // click a door, or by scroll when you walk through door 01. Same look as the site: white or black,
@@ -57,7 +57,19 @@ function base(bg, fog) {
   return { scene, camera, resize };
 }
 
-// 01 About: five black monoliths, one per chapter of his life, lining a path to the statement.
+const loader = new THREE.TextureLoader();
+const photo = (src, w, h) => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: 0x222222, toneMapped: false }));
+  loader.load(`${BASE}${src}`, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    m.material.map = tex;
+    m.material.color.set(0xffffff);
+    m.material.needsUpdate = true;
+  });
+  return m;
+};
+
+// 01 About: five black monoliths, one per chapter of his life, each with a photo, lining a path to the statement.
 export function createAboutScene() {
   const { scene, camera, resize } = base(0xf4f4f4, [6, 22]);
   const black = new THREE.MeshLambertMaterial({ color: 0x0c0c0c });
@@ -67,13 +79,15 @@ export function createAboutScene() {
   credits.forEach((c, i) => {
     const side = i % 2 ? 1 : -1;
     const g = new THREE.Group();
-    g.position.set(side * 1.5, 0, -3 - i * 3.2);
+    g.position.set(side * 1.55, 0, -3 - i * 3.2);
     g.rotation.y = -side * 0.45;
-    const slab = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.9, 0.14), black);
-    slab.position.y = 1.45;
-    const label = textPlane([[c.no, MONO(64), '#ff5b14'], [c.title, BOLD(150), '#ffffff'], [c.en, SANS(46), 'rgba(255,255,255,.6)'], [c.role, SANS(46), 'rgba(255,255,255,.6)']], { width: 0.9 });
-    label.position.set(0, 2.25, 0.075);
-    g.add(slab, label);
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(1.25, 3.1, 0.14), black);
+    slab.position.y = 1.55;
+    const pic = photo(c.photo, 1.05, 1.4);
+    pic.position.set(0, 2.25, 0.075);
+    const label = textPlane([[c.no, MONO(64), '#ff5b14'], [c.title, BOLD(150), '#ffffff'], [c.role, SANS(46), 'rgba(255,255,255,.6)']], { width: 1.05 });
+    label.position.set(0, 1.08, 0.075);
+    g.add(slab, pic, label);
     scene.add(g);
   });
   const end = -3 - credits.length * 3.2 - 2;
@@ -83,74 +97,107 @@ export function createAboutScene() {
 
   function update(t, pointer) {
     const k = ease(t);
-    camera.position.set(pointer.sx * 0.2, 1.5 - pointer.sy * 0.08, 3 + (end + 3.2 - 3) * k);
-    camera.lookAt(pointer.sx * 0.4, 1.45, camera.position.z - 6);
+    camera.position.set(pointer.sx * 0.2, 1.6 - pointer.sy * 0.08, 3 + (end + 3.2 - 3) * k);
+    camera.lookAt(pointer.sx * 0.4, 1.6, camera.position.z - 6);
   }
-  return { scene, camera, resize, update, duration: 4.2 };
+  return { scene, camera, resize, update, duration: 5.5 };
 }
 
-// 02 Tools: an assembly line of four machines. Into each goes what you bring (a white card),
-// out comes what it makes (an orange card) — the same input → output each tool promises.
+// 02 Tools: a clean white production line, drawn like a technical model — white bodies, fine grey
+// edges, glass hoods with an orange light strip. A turntable feeds the line; inside each hood one
+// tool turns what you bring (a white card) into what it makes (an orange card).
 export function createToolsScene() {
-  const { scene, camera, resize } = base(0xf4f4f4, [9, 22]);
-  const black = new THREE.MeshLambertMaterial({ color: 0x0c0c0c });
-  const GAP = 2.8, BELT_Y = 0.62;
+  const { scene, camera, resize } = base(0xf6f6f4, [10, 26]);
+  const white = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xa8a8a8 });
+  const belt = new THREE.MeshLambertMaterial({ color: 0xe9ecee, emissive: 0x929496 });
+  const glass = new THREE.MeshBasicMaterial({ color: 0xd7e8f3, transparent: true, opacity: 0.32, depthWrite: false });
+  const orange = new THREE.MeshBasicMaterial({ color: ORANGE, toneMapped: false });
+  const edge = new THREE.LineBasicMaterial({ color: 0x4a4a4a });
+  const soft = new THREE.LineBasicMaterial({ color: 0x9a9a9a });
+  const add = (geo, mat, x, y, z, lines = edge) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    if (lines) m.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo, 20), lines));
+    scene.add(m);
+    return m;
+  };
+  const GAP = 3.1, BELT_Y = 0.9;
   const span = (tools.length - 1) * GAP;
-  const belt = new THREE.Mesh(new THREE.BoxGeometry(span + 3.4, 0.04, 0.5), new THREE.MeshLambertMaterial({ color: 0x2a2a2a }));
-  belt.position.set(0, BELT_Y - 0.02, 0);
-  scene.add(belt);
-  for (const z of [-0.26, 0.26]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(span + 3.4, 0.03, 0.02), new THREE.MeshBasicMaterial({ color: ORANGE }));
-    rail.position.set(0, BELT_Y + 0.005, z);
-    scene.add(rail);
+  const x0 = -span / 2 - 1.6, x1 = span / 2 + 1.6;
+
+  // Floor line and the long base cabinet under the belt.
+  const floorLine = new THREE.Mesh(new THREE.PlaneGeometry(60, 0.01), new THREE.MeshBasicMaterial({ color: 0x8a8a8a }));
+  floorLine.position.set(0, 0.001, -1.2);
+  floorLine.rotation.x = -Math.PI / 2;
+  scene.add(floorLine);
+  add(new THREE.BoxGeometry(x1 - x0, BELT_Y - 0.06, 0.9), white, (x0 + x1) / 2, (BELT_Y - 0.06) / 2, 0);
+  add(new THREE.BoxGeometry(x1 - x0, 0.06, 0.62), belt, (x0 + x1) / 2, BELT_Y - 0.03, 0);
+  for (let x = x0 + 0.8; x < x1; x += 1.6) add(new THREE.BoxGeometry(0.004, 0.42, 0.004), white, x, 0.35, 0.452, soft); // cabinet doors
+
+  // The turntable at the head of the line, vials riding round its rim.
+  const tx = x0 - 0.9;
+  add(new THREE.CylinderGeometry(0.12, 0.12, BELT_Y - 0.04, 24), white, tx, (BELT_Y - 0.04) / 2, 0);
+  const table = new THREE.Group();
+  table.position.set(tx, BELT_Y, 0);
+  scene.add(table);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.04, 64), belt);
+  disc.add(new THREE.LineSegments(new THREE.EdgesGeometry(disc.geometry, 30), edge));
+  table.add(disc);
+  for (let i = 0; i < 18; i++) {
+    const a = (i / 18) * Math.PI * 2;
+    const v = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.12, 16), white);
+    v.add(new THREE.LineSegments(new THREE.EdgesGeometry(v.geometry, 30), soft));
+    v.position.set(Math.cos(a) * 0.7, 0.08, Math.sin(a) * 0.7);
+    table.add(v);
   }
-  for (let x = -span / 2 - 1.5; x <= span / 2 + 1.5; x += 1.2) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.05, BELT_Y - 0.04, 0.4), black);
-    leg.position.set(x, (BELT_Y - 0.04) / 2, 0);
-    scene.add(leg);
+
+  // Small blank tokens that keep moving along the belt: the line is always running.
+  const tokens = [];
+  for (let i = 0; i < 26; i++) {
+    const tkn = add(new THREE.BoxGeometry(0.12, 0.05, 0.16), white, 0, BELT_Y + 0.025, -0.15, soft);
+    tokens.push({ m: tkn, o: i / 26 });
   }
 
   const machines = tools.map((tl, i) => {
     const x = i * GAP - span / 2;
     const steps = tl.demo.split('→').map((v) => v.trim());
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.05, 0.9), black);
-    body.position.set(x, BELT_Y + 0.52, 0);
-    const mouth = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshBasicMaterial({ color: ORANGE, toneMapped: false }));
-    mouth.position.set(x, BELT_Y + 0.15, 0.452);
-    const label = textPlane([[`${tl.code}  ${tl.role}`, MONO(44), '#ff5b14'], [tl.title, BOLD(120), '#ffffff']], { width: 1.1, align: 'center' });
-    label.position.set(x, BELT_Y + 0.72, 0.452);
-    // Middle steps, if any, sit on top of the machine like a little display.
-    const middle = steps.slice(1, -1).join(' → ');
-    if (middle) {
-      const screen = textPlane([[middle, SANS(64), '#0a0a0a']], { width: 1.5, align: 'center', bg: '#ffffff', pad: 18 });
-      screen.position.set(x, BELT_Y + 1.32, 0);
-      screen.scale.setScalar(0.75);
-      scene.add(screen);
-    }
-    const input = textPlane([[steps[0], SANS(70), '#0a0a0a']], { width: 1.05, align: 'center', bg: '#ffffff', pad: 26 });
-    const output = textPlane([[steps[steps.length - 1], SANS(70), '#ffffff']], { width: 1.05, align: 'center', bg: '#ff5b14', pad: 26 });
-    scene.add(input, output); // standing up on the belt, facing you
-    scene.add(body, mouth, label);
-    return { x, input, output, phase: i * 0.37 };
+    // A glass hood over the belt, a white housing on top, a duct (and on the first, a tall stack).
+    add(new THREE.BoxGeometry(1.7, 0.72, 0.96), glass, x, BELT_Y + 0.36, 0);
+    for (const sx of [-1, 1]) add(new THREE.BoxGeometry(0.06, 0.72, 0.96), white, x + sx * 0.85, BELT_Y + 0.36, 0);
+    add(new THREE.BoxGeometry(1.76, 0.42, 1.0), white, x, BELT_Y + 0.93, 0);
+    add(new THREE.CylinderGeometry(0.16, 0.16, 0.26, 32), white, x + 0.45, BELT_Y + 1.27, -0.1);
+    if (i === 0) add(new THREE.BoxGeometry(0.22, 1.1, 0.22), white, x - 0.55, BELT_Y + 1.69, -0.25);
+    add(new THREE.BoxGeometry(1.5, 0.025, 0.025), orange, x, BELT_Y + 0.68, 0.46, null); // the orange light strip inside the hood
+    const label = textPlane([[`${tl.code}`, MONO(46), '#ff5b14'], [tl.title, BOLD(96), '#0a0a0a']], { width: 1.3, align: 'center' });
+    label.position.set(x - 0.12, BELT_Y + 0.93, 0.505);
+    scene.add(label);
+    const input = textPlane([[steps[0], SANS(56), '#0a0a0a']], { width: 1.15, px: 760, align: 'center', bg: '#ffffff', pad: 30 });
+    const output = textPlane([[steps[steps.length - 1], SANS(56), '#ffffff']], { width: 1.15, px: 760, align: 'center', bg: '#ff5b14', pad: 30 });
+    input.add(new THREE.LineSegments(new THREE.EdgesGeometry(input.geometry), edge));
+    scene.add(input, output);
+    return { x, input, output }; // all on one beat, so one machine's output never meets the next one's input
   });
 
+  const LOOP = 7000; // one card in, one card out: slow and calm
   function update(t, pointer, now) {
     const k = ease(t);
-    const x = -span / 2 - 1.2 + (span + 2.4) * k; // travel along the line
-    camera.position.set(x + pointer.sx * 0.3, 2.3 - pointer.sy * 0.15, 4.6 - Math.sin(k * Math.PI) * 0.6);
-    camera.lookAt(x + 0.4, 1, 0);
+    const x = x0 + 0.4 + (x1 - x0 - 1.2) * k; // drift along the line
+    camera.position.set(x - 2.4 + pointer.sx * 0.3, 3.3 - pointer.sy * 0.15, 5.2);
+    camera.lookAt(x + 0.5, BELT_Y + 0.35, 0);
+    table.rotation.y = now * 0.00025;
+    for (const tk of tokens) {
+      const u = (now / 52000 + tk.o) % 1;
+      tk.m.position.x = x0 + 0.1 + (x1 - x0 - 0.2) * u;
+    }
     for (const m of machines) {
-      // One loop: the input slides in from the left, the output slides out to the right.
-      const c = (now / 3200 + m.phase) % 1;
-      const inX = m.x - 1.3 + smooth(0, 0.45, c) * 1.3;
-      const outX = m.x + smooth(0.5, 0.95, c) * 1.3;
-      m.input.position.set(inX, BELT_Y + 0.1, 0.1);
-      m.output.position.set(outX, BELT_Y + 0.1, 0.1);
-      m.input.visible = c < 0.42; // swallowed by the machine
-      m.output.visible = c > 0.55;
+      const c = (now / LOOP) % 1;
+      m.input.position.set(m.x - 1.45 + smooth(0, 0.42, c) * 1.0, BELT_Y + 0.32, 0.18);
+      m.output.position.set(m.x + 0.45 + smooth(0.55, 0.95, c) * 1.0, BELT_Y + 0.32, 0.18);
+      m.input.visible = c < 0.4; // taken in under the hood
+      m.output.visible = c > 0.56;
     }
   }
-  return { scene, camera, resize, update, duration: 4.2 };
+  return { scene, camera, resize, update, duration: 7.5 };
 }
 
 // 04 Parlour: a table for two under one orange lamp, the two ways to book on the table.
@@ -199,50 +246,6 @@ export function createParlourScene() {
     camera.lookAt(0, 1.45, 0);
     lamp.intensity = 6 + Math.sin(now * 0.004) * 0.4;
     for (const c of [...cards, title]) c.quaternion.copy(camera.quaternion);
-  }
-  return { scene, camera, resize, update, duration: 3.8 };
-}
-
-// 05 Contact: an orange light in the dark, his handles orbiting it like the lines of a tune.
-export function createContactScene() {
-  const { scene, camera, resize } = base(0x050505, [6, 16]);
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 64, 32), new THREE.MeshBasicMaterial({ color: ORANGE, toneMapped: false }));
-  core.position.y = 1.5;
-  scene.add(core);
-  const halo = new THREE.Mesh(new THREE.RingGeometry(0.8, 0.81, 128), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-  halo.position.y = 1.5;
-  scene.add(halo);
-
-  const items = [...links.map((l) => [l.label, l.handle]), ['微信', '扫码添加']];
-  const cards = items.map(([label, handle], i) => {
-    const card = textPlane([[label, MONO(64), '#ff5b14'], [handle, BOLD(130), '#ffffff']], { width: 1.5, align: 'center' });
-    scene.add(card);
-    return { card, a: (i / items.length) * Math.PI * 2, tilt: (i % 2 ? 1 : -1) * 0.35 };
-  });
-  const title = textPlane([['Let’s jam.', BOLD(170), '#ffffff']], { width: 2.8, align: 'center' });
-  title.position.set(0, 2.95, 0);
-  scene.add(title);
-
-  // A little dust around the light.
-  const N = 500, pos = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) pos.set([(Math.random() - 0.5) * 12, Math.random() * 5, (Math.random() - 0.5) * 12], i * 3);
-  scene.add(new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pos, 3)), new THREE.PointsMaterial({ color: 0xffffff, size: 0.02, transparent: true, opacity: 0.6 })));
-
-  function update(t, pointer, now) {
-    const k = ease(t);
-    camera.position.set(pointer.sx * 0.3, 1.7 - pointer.sy * 0.15, 7 - k * 3.4);
-    camera.lookAt(0, 1.65, 0);
-    const pulse = 1 + Math.sin(now * 0.003) * 0.04;
-    core.scale.setScalar(pulse);
-    halo.lookAt(camera.position);
-    halo.scale.setScalar(1 + smooth(0, 1, (now % 2400) / 2400) * 0.8);
-    halo.material.opacity = 0.5 * (1 - (now % 2400) / 2400);
-    for (const c of cards) {
-      const a = c.a + now * 0.00025 + t * 1.2;
-      c.card.position.set(Math.cos(a) * 2.1, 1.5 + Math.sin(a) * c.tilt * 2.1, Math.sin(a) * 2.1);
-      c.card.quaternion.copy(camera.quaternion);
-    }
-    title.quaternion.copy(camera.quaternion);
   }
   return { scene, camera, resize, update, duration: 3.8 };
 }

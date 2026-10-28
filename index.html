@@ -11,17 +11,15 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <!-- Page colour behind the companion; follows whichever section is on screen. -->
-  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
-  <!-- The camera-head character. Hero: the camera dives into his lens. After: he stays on as a companion. -->
+  <!-- The camera-head character; the camera dives into his lens, into a corridor of doors. -->
   <canvas id="scene" aria-label="相机头人物吹奏萨克斯的三维模型"></canvas>
-  <!-- Fades to dark as the camera enters the lens, and to white through the room's first door. -->
+  <!-- Fades to dark as the camera enters the lens. -->
   <div class="iris" id="iris" aria-hidden="true"></div>
-  <!-- Inside the lens: a room with a door for each part of the site. -->
+  <!-- Inside the lens: a corridor with a door for each part of the site. -->
   <div class="room-hud micro" id="roomHud" aria-hidden="true">
     <span><i></i>Inside the lens</span>
     <span class="now" id="roomNow"><b>01</b> About</span>
-    <span class="hint" id="roomHint">Scroll to look around · Click a door to enter</span>
+    <span class="hint" id="roomHint">Scroll to walk · Click a door to enter</span>
   </div>
   <div class="veil" id="veil" aria-hidden="true"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
@@ -41,9 +39,17 @@
     </div>
   </header>
 
+  <!-- Behind a door: that one section, over the corridor. Back returns to the same spot. -->
+  <div class="pages" id="pages" hidden>
+    <div class="page-bar micro">
+      <button type="button" data-back>← 回到走廊</button>
+      <span class="now" id="pageNow"></span>
+      <span class="esc">Esc</span>
+    </div>
   <main>
     <section id="notes" class="sec notes" data-face="notes" data-bg="#fff">
       <div class="col">
+        <figure class="portrait reveal"><img src="/img/about/ustc.jpg" alt="Adrian.Punk 在中国科学技术大学毕业" width="600" height="800" /><figcaption class="micro">USTC · 2026</figcaption></figure>
         <p class="label micro reveal"><i></i>01 — About</p>
         <h1 class="statement reveal d1">我把经验拆成<em>问题、变量与系统</em>，再用 AI 把想象力变成看得见的作品。</h1>
         <p class="lede reveal d2">AI 视觉创作者，也是创作系统的搭建者。做过用户增长、疫苗研发质量和管理科学——工作之外，我吹萨克斯。</p>
@@ -60,7 +66,15 @@
       <div class="col">
         <p class="label micro reveal"><i></i>02 — Tools</p>
         <h2 class="title reveal d1">今天就能用的工具<span class="dot">.</span></h2>
-        <ol class="shelf" id="shelf"></ol>
+        <p class="console-hint micro reveal d2">Four channels · 推一下推子试试</p>
+        <div class="console reveal d2">
+          <ol class="strips" id="shelf"></ol>
+          <div class="master" aria-hidden="true">
+            <span class="micro">Master</span>
+            <span class="meter big"><i></i><i></i></span>
+            <span class="micro">Adrian.Punk</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -85,19 +99,26 @@
       </div>
     </section>
 
-    <section id="contact" class="sec contact" data-face="contact" data-bg="#0a0a0a">
-      <div class="col">
-        <p class="label micro reveal"><i></i>05 — Contact</p>
-        <h2 class="title jam reveal d1">Let’s jam<span class="dot">.</span></h2>
-        <ul class="links" id="links"></ul>
+    <section id="contact" class="contact" data-face="contact" data-bg="#0a0a0a">
+      <p class="jam" aria-hidden="true">Let’s jam<span class="dot">.</span></p>
+      <div class="lanyard" id="badge">
+        <span class="strap" aria-hidden="true"></span>
+        <span class="clip" aria-hidden="true"></span>
+        <article class="badge" aria-label="Adrian.Punk 工作牌">
+          <span class="slot" aria-hidden="true"></span>
+          <header class="micro"><span>Adrian.Punk</span><span>Staff · Musician</span></header>
+          <img class="avatar" src="/img/avatar.jpg" alt="Adrian.Punk 的像素头像" width="400" height="400" draggable="false" />
+          <h2>Adrian<span class="dot">.</span>Punk</h2>
+          <p class="role">AI 视觉创作者 · 创作系统搭建者</p>
+          <ul class="links" id="links"></ul>
+          <footer class="micro"><span class="barcode" aria-hidden="true"></span><span>No. 0115 · Shanghai</span></footer>
+        </article>
       </div>
+      <p class="micro contact-foot">© 2026 Adrian.Punk · 拖一下工牌</p>
     </section>
   </main>
+  </div>
 
-  <footer data-face="contact" data-bg="#0a0a0a">
-    <div class="foot-row micro"><span>© 2026 Adrian.Punk</span><span>Shanghai</span><a href="#top">Back to top ↑</a></div>
-    <p class="foot-name" aria-hidden="true">Adrian<span class="dot">.</span>Punk</p>
-  </footer>
 
   <!-- The music: one line, plus a tiny copy of his LED face. -->
   <div class="player micro" id="player">

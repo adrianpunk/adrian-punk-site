@@ -3,12 +3,13 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLED } from './led.js';
 import { initUI } from './ui.js';
-import { renderContent } from './render.js';
+import { renderContent, refreshCrate, dropBadge } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
-import { createRoom, wallAngle } from './room.js';
+import { createCorridor } from './corridor.js';
+import { doors } from './content.js';
 import { createTunnel } from './tunnel.js';
-import { createAboutScene, createToolsScene, createParlourScene, createContactScene } from './scenes.js';
+import { createAboutScene, createToolsScene, createParlourScene } from './scenes.js';
 
 renderContent();
 initUI();
@@ -18,7 +19,6 @@ const MODEL_URL = `${import.meta.env.BASE_URL}models/camera_head_sax.glb`;
 // Lens of the camera head, measured from the model (metres, model space, facing +Z).
 const LENS = { center: new THREE.Vector3(0.038, 1.687, 0.154), radius: 0.064 };
 const START_TARGET = new THREE.Vector3(0, 0.96, 0);
-const COMPANION_TARGET = new THREE.Vector3(0, 0.93, 0);
 const FOV = 30;
 
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -30,9 +30,10 @@ const canvas = document.getElementById('scene');
 const nameEl = document.getElementById('heroName');
 const iris = document.getElementById('iris');
 const hud = document.getElementById('hud');
-const backdrop = document.getElementById('backdrop');
 const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
+const pages = document.getElementById('pages');
+const pageNow = document.getElementById('pageNow');
 const roomHud = document.getElementById('roomHud');
 const roomNow = document.getElementById('roomNow');
 const roomHint = document.getElementById('roomHint');
@@ -83,27 +84,21 @@ const ledDisc = new THREE.Mesh(
 ledDisc.position.copy(LENS.center);
 rig.add(ledDisc);
 
-// One door per part of the site; the sixth wall is the lens you came in through.
-const room = createRoom({
+// One door per part of the site, down a corridor; the porthole at the end is the lens you came in through.
+const corridor = createCorridor({
   envMap: scene.environment,
   ledTexture: led.texture,
-  doors: [
-    { no: '01', name: 'About', zh: '关于我', section: 'notes' },
-    { no: '02', name: 'Tools', zh: '工具', section: 'tools' },
-    { no: '03', name: 'Writing', zh: '写在 X 上', section: 'sessions' },
-    { no: '04', name: 'Parlour', zh: '约我聊聊', section: 'parlour' },
-    { no: '05', name: 'Contact', zh: '联系我', section: 'contact' },
-  ],
+  doors,
 });
 
 // Behind each door, a small world for that section; the Writing door opens onto the tunnel of works.
+// Contact has none: its page is the scene (a badge drops in).
 const tunnel = createTunnel();
 const behind = {
   notes: createAboutScene(),
   tools: createToolsScene(),
   sessions: { ...tunnel, duration: 6 },
   parlour: createParlourScene(),
-  contact: createContactScene(),
 };
 
 // ---------- Load model ----------
@@ -159,7 +154,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  room.resize(w / h);
+  corridor.resize(w / h);
   Object.values(behind).forEach((b) => b.resize(w / h));
   fitName();
   readScroll();
@@ -190,14 +185,7 @@ function endDistance() {
   return (LENS.radius * 0.7) /(halfTan * Math.sqrt(1 + camera.aspect * camera.aspect));
 }
 
-// After the hero the figure stays on as a companion in the right third (desktop only).
-const wide = matchMedia('(min-width: 901px)');
-function companionDistance() {
-  const halfTan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-  return 1.95 / 0.74 / 2 / halfTan;
-}
-
-// The face per page; hover glyphs win, music wins over everything.
+// The face on the player while a page is open; hover glyphs win.
 let section = '', sectionSince = 0;
 function sectionGlyph(now) {
   if (face.section !== section) { section = face.section; sectionSince = now; }
@@ -207,52 +195,108 @@ function sectionGlyph(now) {
   return null;
 }
 
-// Scroll timeline of the hero track (0..1):
-//   dive into the lens → look around the room, door by door → through door 01 into the About world
-//   → out through white onto the page.
-const DIVE = 0.36; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.30
-const ROOM_IN = 0.3, ROOM_OUT = 0.95;
-const LOOK = [0.35, 0.76]; // one full turn, pausing at each wall
-const SCENE = [0.832, 0.94]; // the world behind door 01, played by scroll
-const DOOR_IN = 1.2; // seconds from a door click to its world
+// Scroll timeline of the hero track (0..1): dive into the lens, then walk down the corridor,
+// stopping at each door. Clicking a door walks you through it into its world, then its page;
+// the page closes back to the same spot in the corridor.
+const DIVE = 0.3; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.26
+const ROOM_IN = 0.26;
+const WALK = [0.33, 1];
+const DOOR_IN = 1.4; // seconds from a door click to its world
 
-// Turn of the head in the room: 60° per wall with a pause in front of each.
-function lookYaw(u) {
-  const x = u * 6, i = Math.floor(x);
-  return wallAngle(i) + (wallAngle(1) * smooth(0.3, 0.7, x - i));
+const lerp = (a, b, t) => a + (b - a) * t;
+function poseAt(u) {
+  const st = corridor.stations, n = st.length - 1;
+  const x = clamp(u) * n, i = Math.min(Math.floor(x), n - 1);
+  const b = smooth(0.22, 0.78, x - i); // pause at each stop
+  const a = st[i], c = st[i + 1];
+  return { x: lerp(a.x, c.x, b), z: lerp(a.z, c.z, b), yaw: lerp(a.yaw, c.yaw, b), stop: Math.round(x) };
+}
+// Window scroll position that stands you in front of door k.
+function stationTop(k) {
+  const p = WALK[0] + ((k + 1) / (corridor.stations.length - 1)) * (WALK[1] - WALK[0]);
+  return hero.offsetTop + p * (hero.offsetHeight - innerHeight);
 }
 
-// Clicking a door: turn to it, walk through into its world, then land on that part of the page.
+// ---------- Pages: one section at a time, over the corridor ----------
+const sections = corridor.doors.map((d) => d.section);
+let openSection = null;
+let inLens = false, flight = null, poseNow = { ...corridor.stations[0], stop: 0 };
+function openPage(section) {
+  const el = document.getElementById(section);
+  const door = corridor.doors.find((d) => d.section === section);
+  openSection = section;
+  flight = null;
+  sections.forEach((id) => { document.getElementById(id).hidden = id !== section; });
+  pages.querySelectorAll('.page-end').forEach((nav) => { nav.hidden = nav.dataset.for !== section; });
+  pages.style.setProperty('--page-bg', el.dataset.bg);
+  pages.classList.toggle('is-dark', el.dataset.bg !== '#fff');
+  pageNow.innerHTML = `<b>${door.no}</b> ${door.name}`;
+  pages.hidden = false;
+  pages.scrollTop = 0;
+  document.documentElement.classList.add('page-open');
+  face.section = el.dataset.face;
+  if (section === 'sessions') refreshCrate();
+  if (section === 'contact') dropBadge();
+  if (location.hash !== `#${section}`) history.replaceState(null, '', `#${section}`);
+}
+// Back to the corridor, standing in front of door k (by default the one you came out of).
+function closePage(k = corridor.doors.find((d) => d.section === openSection)?.k) {
+  veil.style.background = '#ededed';
+  veil.classList.add('on');
+  setTimeout(() => {
+    pages.hidden = true;
+    openSection = null;
+    document.documentElement.classList.remove('page-open');
+    face.section = 'hero';
+    history.replaceState(null, '', location.pathname + location.search);
+    if (k != null) scrollTo({ top: stationTop(k), behavior: 'instant' });
+    readScroll();
+    smoothed = progress;
+    requestAnimationFrame(() => veil.classList.remove('on'));
+  }, 360);
+}
+function land(section, color) {
+  veil.style.background = color;
+  veil.classList.add('on');
+  setTimeout(() => {
+    openPage(section);
+    requestAnimationFrame(() => veil.classList.remove('on'));
+  }, 360);
+}
+pages.addEventListener('click', (e) => {
+  const back = e.target.closest('[data-back]');
+  if (back) closePage(back.dataset.back === '' ? undefined : +back.dataset.back);
+});
+// The hero menu goes straight to a page.
+document.querySelectorAll('nav a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
+  e.preventDefault();
+  const id = a.getAttribute('href').slice(1);
+  land(id, document.getElementById(id).dataset.bg);
+}));
+if (sections.includes(location.hash.slice(1))) openPage(location.hash.slice(1));
+
+// Clicking a door: square up to it, walk through into its world, then land on its page.
 // Once inside a world, a click, wheel, key or touch skips ahead to the page.
-let inLens = false, flight = null, yawNow = 0;
+function enter(d) {
+  flight = { door: d, world: behind[d.section] || null, from: { ...poseNow }, t0: performance.now() };
+}
 addEventListener('click', (e) => {
-  if (!inLens || e.target.closest('a,button,.player')) return;
+  if (!inLens || openSection || e.target.closest('a,button,.player')) return;
   if (flight) { skip(); return; }
-  const d = room.pick((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
-  if (!d) return;
-  let to = wallAngle(d.k);
-  while (to - yawNow > Math.PI) to -= Math.PI * 2;
-  while (yawNow - to > Math.PI) to += Math.PI * 2;
-  flight = { door: d, world: behind[d.section], from: yawNow, to, t0: performance.now() };
+  const d = corridor.pick((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
+  if (d) enter(d);
 });
 function skip() {
-  if (flight && flight.inside && !flight.landing) { flight.landing = true; land(flight.door.section); }
+  if (flight && flight.inside && !flight.landing) { flight.landing = true; land(flight.door.section, document.getElementById(flight.door.section).dataset.bg); }
 }
 addEventListener('wheel', skip, { passive: true });
 addEventListener('touchstart', skip, { passive: true });
-addEventListener('keydown', skip);
-function land(section) {
-  const el = document.getElementById(section);
-  veil.style.background = el.dataset.bg;
-  veil.classList.add('on');
-  setTimeout(() => {
-    scrollTo({ top: el.getBoundingClientRect().top + scrollY, behavior: 'instant' });
-    readScroll();
-    smoothed = progress;
-    flight = null;
-    requestAnimationFrame(() => veil.classList.remove('on'));
-  }, 380);
-}
+addEventListener('keydown', (e) => {
+  if (openSection) { if (e.key === 'Escape') closePage(); return; }
+  if (flight) { skip(); return; }
+  // Enter opens the door you're standing at.
+  if (inLens && e.key === 'Enter') { const d = corridor.doors[poseNow.stop - 1]; if (d) enter(d); }
+});
 
 let last = performance.now();
 function frame(now) {
@@ -264,15 +308,20 @@ function frame(now) {
   pointer.sx += (pointer.x - pointer.sx) * (1 - Math.exp(-4 * dt));
   pointer.sy += (pointer.y - pointer.sy) * (1 - Math.exp(-4 * dt));
 
+  // The LED is also the porthole and the player's little face, so it keeps drawing.
+  led.state.eq = sound.levels(8);
+  if (openSection) {
+    led.state.gazeX = 0; led.state.gazeY = 0; led.state.close = 0;
+    led.state.glyph = face.glyph ?? sectionGlyph(now);
+    led.draw(now);
+    return; // the page covers everything
+  }
+
   const p = smoothed;
   const pd = clamp(p / DIVE); // progress of the dive itself, timed as before at the old scale
-  const companion = p > ROOM_OUT && !flight; // switched while the exit is fully white
-  inLens = (p >= ROOM_IN && !companion) || !!flight;
-  // He steps aside for the Writing strip, which needs the full width.
-  const showFigure = inLens || !companion || (wide.matches && face.section !== 'sessions');
-  // The room doesn't need the figure's model, so it shows even before that has loaded.
-  canvas.style.opacity = inLens ? '1' : showFigure ? '' : '0';
-  backdrop.style.opacity = companion ? 1 : 0;
+  inLens = p >= ROOM_IN || !!flight;
+  // The corridor doesn't need the figure's model, so it shows even before that has loaded.
+  canvas.style.opacity = inLens ? '1' : '';
   const t = easeInOut(clamp(pd / 0.78));
   const d0 = startDistance(), d1 = endDistance();
   const d = d0 * Math.pow(d1 / d0, t); // log-distance dolly: constant perceived speed
@@ -285,121 +334,91 @@ function frame(now) {
   nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, pd);
   hud.style.opacity = 1 - smooth(0, 0.12, pd);
-  // The iris covers each cut: dark into the lens, orange through door 01, white out onto the page.
-  if (p < 0.6) {
-    iris.style.background = '';
-    iris.style.opacity = smooth(0.76, 0.84, pd) * (1 - smooth(0.31, 0.35, p));
-  } else if (p < 0.88) {
-    iris.style.background = '#ff5b14';
-    iris.style.opacity = smooth(0.815, 0.83, p) * (1 - smooth(0.835, 0.85, p));
-  } else {
-    iris.style.background = '#fff';
-    iris.style.opacity = smooth(0.925, 0.945, p) * (1 - smooth(0.955, 0.985, p));
-  }
-  iris.style.visibility = p >= 0.999 || flight ? 'hidden' : '';
-
-  // The LED is also the porthole in the room, so it keeps drawing.
-  led.state.eq = sound.levels(8);
+  // The iris goes dark into the lens and opens again onto the corridor.
+  iris.style.opacity = smooth(0.76, 0.84, pd) * (1 - smooth(0.27, 0.31, p));
+  iris.style.visibility = flight ? 'hidden' : '';
 
   if (inLens) {
-    // Which world (if any) is on screen, and how far through it.
     let world = null, wt = 0;
     if (flight) {
       const ft = (now - flight.t0) / 1000;
-      if (ft > DOOR_IN - 0.35 && !flight.flash) { flight.flash = true; veil.style.background = '#ff5b14'; veil.classList.add('on'); }
+      if (ft > DOOR_IN - 0.3 && !flight.flash) { flight.flash = true; veil.style.background = '#ff5b14'; veil.classList.add('on'); }
       if (ft >= DOOR_IN) {
-        if (!flight.inside) { flight.inside = true; veil.classList.remove('on'); }
-        world = flight.world;
-        wt = clamp((ft - DOOR_IN) / world.duration);
-        if (wt >= 1) skip();
+        if (!flight.world) {
+          // No world behind this door: straight onto the page.
+          if (!flight.landing) { flight.landing = true; land(flight.door.section, '#ff5b14'); }
+        } else {
+          if (!flight.inside) { flight.inside = true; veil.classList.remove('on'); }
+          world = flight.world;
+          wt = clamp((ft - DOOR_IN) / world.duration);
+          if (wt >= 1) skip();
+        }
       }
-    } else if (p >= SCENE[0]) {
-      world = behind.notes;
-      wt = clamp((p - SCENE[0]) / (SCENE[1] - SCENE[0]));
     }
 
     roomHud.style.visibility = '';
     if (world) {
-      const door = flight ? flight.door : room.doors[0];
       roomHud.style.opacity = 1;
       roomHud.classList.toggle('on-light', world.scene.background.getHSL({}).l > 0.5);
-      roomNow.innerHTML = `<b>${door.no}</b> ${door.name}`;
-      roomHint.textContent = flight ? 'Click or scroll to skip' : 'Keep scrolling';
+      roomNow.innerHTML = `<b>${flight.door.no}</b> ${flight.door.name}`;
+      roomHint.textContent = 'Click or scroll to skip';
       cursor.classList.remove('is-hover');
       world.update(wt, pointer, now, dt);
       renderer.render(world.scene, world.camera);
       return;
     }
 
-    let yaw, walk = 0, walkTo = 0;
+    let pose;
     const opens = {};
     if (flight) {
-      const ft = (now - flight.t0) / 1000;
-      yaw = flight.from + (flight.to - flight.from) * easeInOut(clamp(ft / 0.55));
-      walkTo = flight.door.k;
-      opens[walkTo] = smooth(0.35, 0.8, ft);
-      walk = easeInOut(clamp((ft - 0.5) / 0.7)) * 0.95;
+      const ft = (now - flight.t0) / 1000, dr = flight.door;
+      const a = easeInOut(clamp(ft / 0.8)), w = easeInOut(clamp((ft - 0.8) / 0.6));
+      pose = {
+        x: lerp(lerp(flight.from.x, dr.stand.x, a), dr.through.x, w),
+        z: lerp(lerp(flight.from.z, dr.stand.z, a), dr.through.z, w),
+        yaw: lerp(flight.from.yaw, dr.stand.yaw, a),
+      };
+      opens[dr.k] = smooth(0.5, 0.95, ft);
     } else {
-      const u = clamp((p - LOOK[0]) / (LOOK[1] - LOOK[0]));
-      yaw = lookYaw(u);
-      opens[0] = smooth(0.755, 0.79, p);
-      walk = smooth(0.77, 0.83, p);
+      pose = poseAt(clamp((p - WALK[0]) / (WALK[1] - WALK[0])));
+      poseNow = pose;
     }
-    yawNow = yaw;
-    roomHud.classList.remove('on-light');
-    room.update({ yaw, walk, walkTo, opens, pointer, dt, nudge: finePointer.matches });
-    roomHud.style.opacity = flight ? 0 : smooth(0.34, 0.37, p) * (1 - smooth(0.76, 0.79, p));
-    const facing = ((Math.round(yaw / wallAngle(1)) % 6) + 6) % 6;
-    const door = room.doors.find((x) => x.k === facing);
-    roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : '<b>00</b> Lens';
-    roomHint.textContent = 'Scroll to look around · Click a door to enter';
-    cursor.classList.toggle('is-hover', !!room.hovered);
+    roomHud.classList.add('on-light');
+    corridor.update({ pose, opens, pointer, dt, nudge: finePointer.matches, pickable: !flight });
+    roomHud.style.opacity = flight ? 0 : smooth(0.3, 0.34, p);
+    const door = corridor.doors[poseNow.stop - 1];
+    roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : '<b>00</b> Corridor';
+    roomHint.textContent = finePointer.matches ? 'Scroll to walk · Click a door to enter' : 'Swipe to walk · Tap a door to enter';
+    cursor.classList.toggle('is-hover', !!corridor.hovered);
     led.state.gazeX = pointer.sx; led.state.gazeY = pointer.sy; led.state.close = 0; led.state.glyph = null;
     led.draw(now);
-    renderer.render(room.scene, room.camera);
+    renderer.render(corridor.scene, corridor.camera);
     return;
   }
   roomHud.style.visibility = 'hidden';
 
-  if (companion) {
-    // Turned a little toward the page content, still following the pointer.
-    rig.rotation.y = -0.32 + pointer.sx * 0.22;
-    rig.rotation.x = pointer.sy * 0.04;
-    rig.rotation.z = sound.playing ? Math.sin(now * 0.004) * 0.025 : 0;
-  } else {
-    rig.rotation.set(pointer.sy * 0.05 * free, pointer.sx * 0.28 * free, 0);
-  }
+  rig.rotation.set(pointer.sy * 0.05 * free, pointer.sx * 0.28 * free, 0);
   rig.updateMatrixWorld();
   lensWorld.copy(LENS.center).applyMatrix4(rig.matrixWorld);
   lensNormal.set(0, 0, 1).transformDirection(rig.matrixWorld);
+  target.lerpVectors(START_TARGET, lensWorld, approach);
+  dir.lerpVectors(startDir, lensNormal, smooth(0.1, 0.8, approach)).normalize();
+  camera.position.copy(target).addScaledVector(dir, d);
+  camera.position.x += pointer.sx * -0.15 * free;
+  camera.position.y += pointer.sy * 0.1 * free;
+  camera.lookAt(target);
 
-  if (companion) {
-    // Same perspective, frame shifted so the figure stands at ~77% of the width.
-    camera.setViewOffset(innerWidth, innerHeight, -0.27 * innerWidth, 0, innerWidth, innerHeight);
-    camera.position.copy(COMPANION_TARGET).add(new THREE.Vector3(0, 0.05, companionDistance()));
-    camera.lookAt(COMPANION_TARGET);
-  } else {
-    camera.clearViewOffset();
-    target.lerpVectors(START_TARGET, lensWorld, approach);
-    dir.lerpVectors(startDir, lensNormal, smooth(0.1, 0.8, approach)).normalize();
-    camera.position.copy(target).addScaledVector(dir, d);
-    camera.position.x += pointer.sx * -0.15 * free;
-    camera.position.y += pointer.sy * 0.1 * free;
-    camera.lookAt(target);
-  }
-
-  // Eyes look toward the pointer from wherever the figure stands on screen.
-  led.state.gazeX = companion ? clamp((pointer.sx - 0.54) * 1.4, -1, 1) : pointer.sx * free;
-  led.state.gazeY = companion ? pointer.sy : pointer.sy * free;
-  led.state.close = companion ? 0 : smooth(0.68, 0.8, pd);
-  led.state.glyph = companion ? face.glyph ?? sectionGlyph(now) : null;
+  // Eyes look toward the pointer.
+  led.state.gazeX = pointer.sx * free;
+  led.state.gazeY = pointer.sy * free;
+  led.state.close = smooth(0.68, 0.8, pd);
+  led.state.glyph = null;
   led.draw(now);
-  if (!showFigure) return;
-
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
 
-if (import.meta.env.DEV) window.__debug = { camera, ledDisc, room, behind, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; },
+if (import.meta.env.DEV) window.__debug = { camera, ledDisc, corridor, behind, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; },
+  stationTop, openPage, closePage,
   // Jump straight into the world behind door k, `at` seconds in.
-  enter(k, at = DOOR_IN) { const d = room.doors[k]; flight = { door: d, world: behind[d.section], from: wallAngle(k), to: wallAngle(k), t0: performance.now() - at * 1000, flash: true }; } };
+  enter(k, at = DOOR_IN) { const d = corridor.doors[k]; flight = { door: d, world: behind[d.section] || null, from: { ...d.stand }, t0: performance.now() - at * 1000, flash: true }; } };

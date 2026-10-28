@@ -1,19 +1,28 @@
 // All page copy lives here. Content comes from the adrian-punk-portfolio repo.
 // To add a session (X post): put a cover in public/sessions/ and add a row at the top of `sessions`.
 
+// The doors down the corridor, in order; each opens one section of the page.
+export const doors = [
+  { no: '01', name: 'About', zh: '关于我', section: 'notes' },
+  { no: '02', name: 'Tools', zh: '工具', section: 'tools' },
+  { no: '03', name: 'Writing', zh: '写在 X 上', section: 'sessions' },
+  { no: '04', name: 'Parlour', zh: '约我聊聊', section: 'parlour' },
+  { no: '05', name: 'Contact', zh: '联系我', section: 'contact' },
+];
+
 export const credits = [
-  { no: '01', title: '用户增长', role: '线上教育大厂 · 用户增长负责人', en: 'Online education · User growth leader', story: '把模糊的用户需求转化为清晰的增长路径，在产品、内容与运营之间建立可以持续复用的增长方法。', tags: ['User Growth', 'Education', 'Strategy'] },
-  { no: '02', title: '生命科学', role: '疫苗大厂 · 研发质量管理', en: 'Vaccine R&D · Quality management', story: '在复杂流程中识别风险、建立标准，并让每一个判断都可以被验证。', tags: ['Biotech', 'R&D', 'Quality'] },
-  { no: '03', title: '管理科学', role: '中国科学技术大学 · 管理科学硕士', en: 'USTC · Master of Management Science', story: '把经验拆解成问题、变量与系统——这成了我面对产品、组织与 AI 时的底层思考方式。', tags: ['USTC', 'Models', 'Systems'] },
-  { no: '04', title: 'AI 视觉创作', role: 'AI 视觉创作者 · X 内容创作者', en: 'AI visual creator · X creator', story: '持续研究生成式视觉、提示词与创作工作流，在 X 上分享实验与教程，让技术成为个人表达。', tags: ['Generative AI', 'Visual', 'X Creator'] },
-  { no: '05', title: 'FDE & AI 培训', role: 'FDE · AI 企业培训', en: 'FDE · Enterprise AI training', story: '连接 AI 技术与业务场景，把工具、工作流与实践方法带进团队，让学习转化为实际应用。', tags: ['FDE', 'AI Training', 'Workflows'] },
+  { no: '01', photo: 'img/about/growth.jpg', title: '用户增长', role: '线上教育大厂 · 用户增长负责人', en: 'Online education · User growth leader', story: '把模糊的用户需求转化为清晰的增长路径，在产品、内容与运营之间建立可以持续复用的增长方法。', tags: ['User Growth', 'Education', 'Strategy'] },
+  { no: '02', photo: 'img/about/vaccine.jpg', title: '生命科学', role: '疫苗大厂 · 研发质量管理', en: 'Vaccine R&D · Quality management', story: '在复杂流程中识别风险、建立标准，并让每一个判断都可以被验证。', tags: ['Biotech', 'R&D', 'Quality'] },
+  { no: '03', photo: 'img/about/ustc.jpg', title: '管理科学', role: '中国科学技术大学 · 管理科学硕士', en: 'USTC · Master of Management Science', story: '把经验拆解成问题、变量与系统——这成了我面对产品、组织与 AI 时的底层思考方式。', tags: ['USTC', 'Models', 'Systems'] },
+  { no: '04', photo: 'img/avatar.jpg', title: 'AI 视觉创作', role: 'AI 视觉创作者 · X 内容创作者', en: 'AI visual creator · X creator', story: '持续研究生成式视觉、提示词与创作工作流，在 X 上分享实验与教程，让技术成为个人表达。', tags: ['Generative AI', 'Visual', 'X Creator'] },
+  { no: '05', photo: 'img/about/talk.jpg', title: 'FDE & AI 培训', role: 'FDE · AI 企业培训', en: 'FDE · Enterprise AI training', story: '连接 AI 技术与业务场景，把工具、工作流与实践方法带进团队，让学习转化为实际应用。', tags: ['FDE', 'AI Training', 'Workflows'] },
 ];
 
 export const tools = [
-  { code: 'AP-01', title: 'Punk Skill', role: 'Visual generation suite', copy: '面向 AI Agent 的视觉生成 Skill 集合，用来制作封面、头像，并稳定统一的个人视觉风格。', scenes: ['文章与产品封面', '个人头像与视觉身份', '系列内容统一风格'], demo: '主题 + 人物素材 → 封面、头像与成套视觉资产', href: 'https://github.com/adrianpunk/Punk-Skill' },
-  { code: 'AP-02', title: 'IP Illustrations', role: 'Personal IP module', copy: '从一张照片建立可复用的个人 IP，让同一个角色持续进入文章插图和不同叙事场景。', scenes: ['长文配图', '教程场景插画', '个人 IP 连续叙事'], demo: '一张人物照片 → 角色设定 → 一致的场景插画', href: 'https://github.com/adrianpunk/punk-ip-illustrations' },
-  { code: 'AP-03', title: 'XHS Cards', role: 'Knowledge card module', copy: '把个人 IP 与 Markdown 教程转换成自适应的小红书知识卡片，兼顾信息层级与发布效果。', scenes: ['小红书教程', '知识型图文', '个人 IP 内容系列'], demo: 'Markdown 教程 → 带个人 IP 的多页知识卡片', href: 'https://github.com/adrianpunk/punk-xhs-cards' },
-  { code: 'AP-M', title: '微排 Weipai', role: 'WeChat layout tool', copy: '把 Markdown 稿件整理成层级清楚、适合阅读和发布的微信公众号图文，减少手动排版。', scenes: ['公众号长文', '教程与复盘', '品牌内容排版'], demo: 'Markdown → 自动排版 → 微信预览 → 发布', href: 'https://weipai.iamadrianpunk.com/' },
+  { code: 'AP-01', short: '封面 · 头像 · 统一视觉', title: 'Punk Skill', role: 'Visual generation suite', copy: '面向 AI Agent 的视觉生成 Skill 集合，用来制作封面、头像，并稳定统一的个人视觉风格。', scenes: ['文章与产品封面', '个人头像与视觉身份', '系列内容统一风格'], demo: '主题 + 人物素材 → 封面、头像与成套视觉资产', href: 'https://github.com/adrianpunk/Punk-Skill' },
+  { code: 'AP-02', short: '一张照片，一个会讲故事的 IP', title: 'IP Illustrations', role: 'Personal IP module', copy: '从一张照片建立可复用的个人 IP，让同一个角色持续进入文章插图和不同叙事场景。', scenes: ['长文配图', '教程场景插画', '个人 IP 连续叙事'], demo: '一张人物照片 → 角色设定 → 一致的场景插画', href: 'https://github.com/adrianpunk/punk-ip-illustrations' },
+  { code: 'AP-03', short: 'Markdown 变小红书卡片', title: 'XHS Cards', role: 'Knowledge card module', copy: '把个人 IP 与 Markdown 教程转换成自适应的小红书知识卡片，兼顾信息层级与发布效果。', scenes: ['小红书教程', '知识型图文', '个人 IP 内容系列'], demo: 'Markdown 教程 → 带个人 IP 的多页知识卡片', href: 'https://github.com/adrianpunk/punk-xhs-cards' },
+  { code: 'AP-M', short: 'Markdown 一键公众号排版', title: '微排 Weipai', role: 'WeChat layout tool', copy: '把 Markdown 稿件整理成层级清楚、适合阅读和发布的微信公众号图文，减少手动排版。', scenes: ['公众号长文', '教程与复盘', '品牌内容排版'], demo: 'Markdown → 自动排版 → 微信预览 → 发布', href: 'https://weipai.iamadrianpunk.com/' },
 ];
 
 export const sessions = [
