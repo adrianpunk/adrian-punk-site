@@ -15,14 +15,15 @@
   <div class="backdrop" id="backdrop" aria-hidden="true"></div>
   <!-- The camera-head character. Hero: the camera dives into his lens. After: he stays on as a companion. -->
   <canvas id="scene" aria-label="相机头人物吹奏萨克斯的三维模型"></canvas>
-  <!-- Fades to dark as the camera enters the lens, and to white at the tunnel's exit. -->
+  <!-- Fades to dark as the camera enters the lens, and to white through the room's first door. -->
   <div class="iris" id="iris" aria-hidden="true"></div>
-  <!-- Inside the lens: every work lines the walls; a counter rides along. -->
-  <div class="tunnel-hud micro" id="tunnelHud" aria-hidden="true">
+  <!-- Inside the lens: a room with a door for each part of the site. -->
+  <div class="room-hud micro" id="roomHud" aria-hidden="true">
     <span><i></i>Inside the lens</span>
-    <span class="count"><b id="tunnelNow">01</b> / <span id="tunnelTotal">28</span></span>
-    <span class="hint">Click a work to open it</span>
+    <span class="now" id="roomNow"><b>01</b> About</span>
+    <span class="hint">Scroll to look around · Click a door to enter</span>
   </div>
+  <div class="veil" id="veil" aria-hidden="true"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
   <header class="hero" id="top" data-face="hero" data-bg="#fff">

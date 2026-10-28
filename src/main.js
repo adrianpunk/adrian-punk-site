@@ -6,7 +6,7 @@ import { initUI } from './ui.js';
 import { renderContent } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
-import { createTunnel } from './tunnel.js';
+import { createRoom, wallAngle } from './room.js';
 
 renderContent();
 initUI();
@@ -31,8 +31,9 @@ const hud = document.getElementById('hud');
 const backdrop = document.getElementById('backdrop');
 const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
-const tunnelHud = document.getElementById('tunnelHud');
-const tunnelNow = document.getElementById('tunnelNow');
+const roomHud = document.getElementById('roomHud');
+const roomNow = document.getElementById('roomNow');
+const veil = document.getElementById('veil');
 const cursor = document.getElementById('cursor');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -79,8 +80,18 @@ const ledDisc = new THREE.Mesh(
 ledDisc.position.copy(LENS.center);
 rig.add(ledDisc);
 
-const tunnel = createTunnel();
-document.getElementById('tunnelTotal').textContent = String(tunnel.count).padStart(2, '0');
+// One door per part of the site; the sixth wall is the lens you came in through.
+const room = createRoom({
+  envMap: scene.environment,
+  ledTexture: led.texture,
+  doors: [
+    { no: '01', name: 'About', zh: '关于我', section: 'notes' },
+    { no: '02', name: 'Tools', zh: '工具', section: 'tools' },
+    { no: '03', name: 'Writing', zh: '写在 X 上', section: 'sessions' },
+    { no: '04', name: 'Parlour', zh: '约我聊聊', section: 'parlour' },
+    { no: '05', name: 'Contact', zh: '联系我', section: 'contact' },
+  ],
+});
 
 // ---------- Load model ----------
 new GLTFLoader().load(
@@ -104,10 +115,13 @@ new GLTFLoader().load(
 
 // ---------- Input / scroll ----------
 const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
-addEventListener('pointermove', (e) => {
+const aim = (e) => {
   pointer.x = (e.clientX / innerWidth) * 2 - 1;
   pointer.y = (e.clientY / innerHeight) * 2 - 1;
-}, { passive: true });
+};
+addEventListener('pointermove', aim, { passive: true });
+addEventListener('pointerdown', aim, { passive: true }); // a tap aims too, so doors can be tapped
+const finePointer = matchMedia('(pointer: fine)');
 
 let progress = 0; // raw scroll progress through the hero track, 0..1
 let smoothed = 0;
@@ -132,7 +146,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  tunnel.resize(w / h);
+  room.resize(w / h);
   fitName();
   readScroll();
 }
@@ -180,14 +194,40 @@ function sectionGlyph(now) {
 }
 
 // Scroll timeline of the hero track (0..1):
-//   dive into the lens → fly through the works → out through the white hexagon onto the page.
+//   dive into the lens → look around the room, door by door → walk through door 01 onto the page.
 const DIVE = 0.36; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.30
-const TUNNEL_IN = 0.3, TUNNEL_OUT = 0.9;
+const ROOM_IN = 0.3, ROOM_OUT = 0.91;
+const LOOK = [0.35, 0.82]; // one full turn, pausing at each wall
 
-let inTunnel = false;
+// Turn of the head in the room: 60° per wall with a pause in front of each.
+function lookYaw(u) {
+  const x = u * 6, i = Math.floor(x);
+  return wallAngle(i) + (wallAngle(1) * smooth(0.3, 0.7, x - i));
+}
+
+// Clicking a door: turn to it, walk through, and land on that part of the page.
+let inRoom = false, flight = null, yawNow = 0;
 addEventListener('click', (e) => {
-  if (inTunnel && tunnel.hovered && !e.target.closest('a,button,.player')) open(tunnel.hovered.href, '_blank', 'noopener');
+  if (!inRoom || flight || e.target.closest('a,button,.player')) return;
+  const d = room.pick((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
+  if (!d) return;
+  let to = wallAngle(d.k);
+  while (to - yawNow > Math.PI) to -= Math.PI * 2;
+  while (yawNow - to > Math.PI) to += Math.PI * 2;
+  flight = { door: d, from: yawNow, to, t0: performance.now() };
 });
+function land(section) {
+  const el = document.getElementById(section);
+  veil.style.background = el.dataset.bg;
+  veil.classList.add('on');
+  setTimeout(() => {
+    scrollTo({ top: el.getBoundingClientRect().top + scrollY, behavior: 'instant' });
+    readScroll();
+    smoothed = progress;
+    flight = null;
+    requestAnimationFrame(() => veil.classList.remove('on'));
+  }, 380);
+}
 
 let last = performance.now();
 function frame(now) {
@@ -201,11 +241,12 @@ function frame(now) {
 
   const p = smoothed;
   const pd = clamp(p / DIVE); // progress of the dive itself, timed as before at the old scale
-  const companion = p > TUNNEL_OUT; // switched while the exit is fully white
-  inTunnel = p >= TUNNEL_IN && !companion;
+  const companion = p > ROOM_OUT && !flight; // switched while the exit is fully white
+  inRoom = (p >= ROOM_IN && !companion) || !!flight;
   // He steps aside for the Writing strip, which needs the full width.
-  const showFigure = inTunnel || !companion || (wide.matches && face.section !== 'sessions');
-  canvas.style.opacity = showFigure ? '' : '0';
+  const showFigure = inRoom || !companion || (wide.matches && face.section !== 'sessions');
+  // The room doesn't need the figure's model, so it shows even before that has loaded.
+  canvas.style.opacity = inRoom ? '1' : showFigure ? '' : '0';
   backdrop.style.opacity = companion ? 1 : 0;
   const t = easeInOut(clamp(pd / 0.78));
   const d0 = startDistance(), d1 = endDistance();
@@ -219,22 +260,44 @@ function frame(now) {
   nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, pd);
   hud.style.opacity = 1 - smooth(0, 0.12, pd);
-  // Dark as we enter the lens, clearing onto the tunnel; white at the exit, clearing onto the page.
+  // Dark as we enter the lens, clearing onto the room; white through the first door, clearing onto the page.
   const white = p > 0.6;
   iris.style.background = white ? '#fff' : '';
   iris.style.opacity = white
-    ? smooth(0.87, 0.9, p) * (1 - smooth(0.91, 0.96, p))
+    ? smooth(0.875, 0.9, p) * (1 - smooth(0.92, 0.97, p))
     : smooth(0.76, 0.84, pd) * (1 - smooth(0.31, 0.35, p));
   iris.style.visibility = p >= 0.999 ? 'hidden' : '';
-  const tt = clamp((p - TUNNEL_IN) / (TUNNEL_OUT - TUNNEL_IN));
-  tunnelHud.style.opacity = smooth(0.33, 0.37, p) * (1 - smooth(0.84, 0.87, p));
-  tunnelHud.style.visibility = inTunnel ? '' : 'hidden';
+  roomHud.style.opacity = flight ? 0 : smooth(0.34, 0.37, p) * (1 - smooth(0.82, 0.85, p));
+  roomHud.style.visibility = inRoom ? '' : 'hidden';
 
-  if (inTunnel) {
-    tunnel.update(tt, pointer, now, dt);
-    tunnelNow.textContent = String(tunnel.indexAt(tt)).padStart(2, '0');
-    cursor.classList.toggle('is-hover', !!tunnel.hovered);
-    renderer.render(tunnel.scene, tunnel.camera);
+  // The LED is also the porthole in the room, so it keeps drawing.
+  led.state.eq = sound.levels(8);
+
+  if (inRoom) {
+    let yaw, walk = 0, walkTo = 0;
+    const opens = {};
+    if (flight) {
+      const ft = (now - flight.t0) / 1000;
+      yaw = flight.from + (flight.to - flight.from) * easeInOut(clamp(ft / 0.55));
+      walkTo = flight.door.k;
+      opens[walkTo] = smooth(0.35, 0.8, ft);
+      walk = easeInOut(clamp((ft - 0.5) / 0.7)) * 0.95;
+      if (ft > 0.95 && !flight.landing) { flight.landing = true; land(flight.door.section); }
+    } else {
+      const u = clamp((p - LOOK[0]) / (LOOK[1] - LOOK[0]));
+      yaw = lookYaw(u);
+      opens[0] = smooth(0.82, 0.86, p);
+      walk = smooth(0.83, 0.9, p);
+    }
+    yawNow = yaw;
+    room.update({ yaw, walk, walkTo, opens, pointer, dt, nudge: finePointer.matches });
+    const facing = ((Math.round(yaw / wallAngle(1)) % 6) + 6) % 6;
+    const door = room.doors.find((x) => x.k === facing);
+    roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : '<b>00</b> Lens';
+    cursor.classList.toggle('is-hover', !!room.hovered);
+    led.state.gazeX = pointer.sx; led.state.gazeY = pointer.sy; led.state.close = 0; led.state.glyph = null;
+    led.draw(now);
+    renderer.render(room.scene, room.camera);
     return;
   }
 
@@ -269,7 +332,6 @@ function frame(now) {
   led.state.gazeX = companion ? clamp((pointer.sx - 0.54) * 1.4, -1, 1) : pointer.sx * free;
   led.state.gazeY = companion ? pointer.sy : pointer.sy * free;
   led.state.close = companion ? 0 : smooth(0.68, 0.8, pd);
-  led.state.eq = sound.levels(8);
   led.state.glyph = companion ? face.glyph ?? sectionGlyph(now) : null;
   led.draw(now);
   if (!showFigure) return;
@@ -278,4 +340,4 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-if (import.meta.env.DEV) window.__debug = { camera, ledDisc, tunnel, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };
+if (import.meta.env.DEV) window.__debug = { camera, ledDisc, room, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };
