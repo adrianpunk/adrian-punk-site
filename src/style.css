@@ -241,25 +241,52 @@ main section[hidden] { display: none; }
   position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; pointer-events: none;
   font-family: var(--display); font-weight: 800; font-size: clamp(80px, 17vw, 300px); letter-spacing: -0.06em; line-height: 1; color: #161616; white-space: nowrap;
 }
-.lanyard { position: relative; left: 50%; width: min(340px, 86vw); padding-top: 0; transform: translate3d(-50%, 0, 0); transform-origin: 50% 0; touch-action: none; user-select: none; }
+.lanyard { position: relative; left: 50%; width: clamp(240px, min(80vw, 44vh), 320px); transform: translate3d(-50%, 0, 0); transform-origin: 50% 0; touch-action: none; user-select: none; cursor: grab; container-type: inline-size; } /* the badge sizes everything in cqw of this width */
 .lanyard.is-drag { cursor: grabbing; }
-.strap { display: block; width: 22px; height: clamp(24px, 7vh, 110px); margin: 0 auto; background: repeating-linear-gradient(to bottom, var(--orange) 0 14px, #e04c0c 14px 16px); }
-.clip { display: block; width: 30px; height: 26px; margin: -2px auto -10px; border: 3px solid #bdbdbd; border-radius: 6px 6px 10px 10px; background: #2a2a2a; position: relative; z-index: 2; }
-.badge { position: relative; padding: 22px 22px 16px; background: var(--white); color: var(--ink); border-radius: 18px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5); }
-.badge .slot { display: block; width: 54px; height: 9px; margin: -8px auto 16px; border-radius: 6px; background: #0a0a0a; }
-.badge header { display: flex; justify-content: space-between; color: var(--grey); padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-.badge header span:first-child { color: var(--orange); }
-.badge .avatar { display: block; width: clamp(72px, 11vh, 112px); height: auto; aspect-ratio: 1; margin: 14px auto 10px; border-radius: 12px; image-rendering: pixelated; pointer-events: none; }
-.badge h2 { text-align: center; font-family: var(--display); font-weight: 800; font-size: 34px; letter-spacing: -0.04em; line-height: 1; }
-.badge .role { text-align: center; color: #666; font-size: 13px; margin-top: 6px; }
-.badge .links { list-style: none; margin-top: 16px; border-top: 1.5px solid var(--ink); }
-.badge .links a, .badge .links button { width: 100%; display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; padding: clamp(5px, 1vh, 9px) 0; border-bottom: 1px solid var(--line); text-align: left; }
-.badge .links .micro { color: var(--grey); }
-.badge .links b { font-family: var(--display); font-weight: 700; font-size: 16px; letter-spacing: -0.01em; transition: color 0.3s; }
-.badge .links .arr { color: var(--grey); transition: color 0.3s, transform 0.4s var(--ease); }
-.badge .links a:hover b, .badge .links button:hover b, .badge .links a:hover .arr, .badge .links button:hover .arr { color: var(--orange); }
-.badge footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; color: var(--grey); }
-.barcode { width: 110px; height: 22px; background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 8px, var(--ink) 8px 11px, transparent 11px 12px); }
+.strap {
+  display: block; width: 26px; height: clamp(28px, 8vh, 110px); margin: 0 auto; overflow: hidden; white-space: nowrap;
+  writing-mode: vertical-rl; text-align: center; line-height: 26px; font-size: 9px; letter-spacing: 0.3em;
+  background: #161616; color: var(--orange); border-left: 1px solid #2a2a2a; border-right: 1px solid #2a2a2a;
+}
+.clip { position: relative; z-index: 2; display: block; width: 30px; height: 16px; margin: 0 auto; border-radius: 4px; background: linear-gradient(90deg, #7d7d7d, #f4f4f4 45%, #a3a3a3); }
+.clip::after { content: ""; position: absolute; left: 50%; top: 12px; width: 14px; height: 24px; margin-left: -7px; border: 3px solid #d4d4d4; border-radius: 9px; }
+.badge {
+  position: relative; margin-top: 2px; padding: 4.5cqw 4.5cqw 5cqw; overflow: hidden;
+  background: #f6f5f1; color: var(--ink); border-radius: 5cqw;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+.badge .slot { display: block; width: 18cqw; height: 3.4cqw; margin: 0 auto 4cqw; border-radius: 3cqw; background: #0a0a0a; }
+.photo-wrap { position: relative; }
+.photo { position: relative; aspect-ratio: 1 / 0.9; overflow: hidden; border-radius: 2.5cqw; background: var(--orange); }
+/* Duotone: the avatar in black on orange, on brand with the rest of the site. */
+.photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; filter: grayscale(1) contrast(1.4) brightness(1.15); mix-blend-mode: multiply; image-rendering: pixelated; pointer-events: none; }
+.photo .tag { position: absolute; left: 3.5cqw; top: 3.5cqw; padding: 1cqw 2cqw; font-size: 3cqw; background: #f6f5f1; color: var(--ink); }
+.photo .tag.no { left: auto; right: 3.5cqw; background: var(--ink); color: #f6f5f1; }
+.sticker { position: absolute; right: -2cqw; bottom: -11cqw; width: 25cqw; animation: spin 16s linear infinite; }
+.sticker circle { fill: var(--ink); }
+.sticker .dot { fill: var(--orange); }
+.sticker text { fill: #f6f5f1; font-family: var(--mono); font-size: 9.6px; letter-spacing: 0.12em; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.badge h2 { margin-top: 6cqw; font-family: var(--display); font-weight: 800; font-size: 13.5cqw; letter-spacing: -0.055em; line-height: 0.9; }
+.badge .role { margin-top: 2.6cqw; font-size: 2.9cqw; color: var(--grey); }
+.badge .links { list-style: none; display: grid; grid-template-columns: 1fr 1fr; column-gap: 4cqw; margin-top: 5cqw; border-top: 1.5px solid var(--ink); }
+.badge .links li { border-bottom: 1px solid rgba(10, 10, 10, 0.12); }
+.badge .links a { display: block; padding: 2.4cqw 0 2.6cqw; }
+.badge .links .micro { display: block; font-size: 2.7cqw; color: var(--grey); transition: color 0.3s; }
+.badge .links b { display: block; margin-top: 0.6cqw; font-family: var(--display); font-weight: 700; font-size: 4.1cqw; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badge .links a:hover .micro { color: var(--orange); }
+.badge .links .wechat { grid-column: 1 / -1; border: 0; margin-top: 3.5cqw; }
+.badge .links .wechat button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3cqw 3.5cqw; border-radius: 2.5cqw; background: var(--ink); color: #f6f5f1; transition: background-color 0.3s; }
+.badge .links .wechat b { font-size: 4cqw; font-weight: 600; }
+.badge .links .wechat .micro { font-size: 2.7cqw; color: var(--orange); }
+.badge .links .wechat button:hover { background: var(--orange); }
+.badge .links .wechat button:hover .micro { color: var(--ink); }
+/* The plastic sleeve: a soft glare that slides as the badge swings. */
+.sheen {
+  position: absolute; inset: -20%; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.55) 47%, transparent 56%);
+  transform: translateX(calc(var(--a, 0) * -160% - 30%)); mix-blend-mode: soft-light;
+}
 .contact-foot { position: relative; text-align: center; color: var(--grey); margin-top: 28px; }
 
 /* ---------- Player: the music as one line, plus his face ---------- */

@@ -273,7 +273,10 @@ document.querySelectorAll('nav a[href^="#"]').forEach((a) => a.addEventListener(
   const id = a.getAttribute('href').slice(1);
   land(id, document.getElementById(id).dataset.bg);
 }));
-if (sections.includes(location.hash.slice(1))) openPage(location.hash.slice(1));
+// A link to #tools (etc.) opens that page, on load or later.
+const openFromHash = () => { const id = location.hash.slice(1); if (sections.includes(id) && id !== openSection) openPage(id); };
+addEventListener('hashchange', openFromHash);
+openFromHash();
 
 // Clicking a door: square up to it, walk through into its world, then land on its page.
 // Once inside a world, a click, wheel, key or touch skips ahead to the page.

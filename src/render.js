@@ -52,8 +52,8 @@ export function renderContent() {
       <span class="price">¥${p.price}<span> / 小时</span></span>
     </li>`).join('');
 
-  $('links').innerHTML = links.map((l) => `<li><a href="${l.href}" ${ext}><span class="micro">${esc(l.label)}</span><b>${esc(l.handle)}</b><span class="arr">↗</span></a></li>`).join('') +
-    `<li><button type="button" data-qr><span class="micro">微信</span><b>扫码添加</b><span class="arr">→</span></button></li>`;
+  $('links').innerHTML = links.map((l) => `<li><a href="${l.href}" ${ext}><span class="micro">${esc(l.label)} ↗</span><b>${esc(l.handle)}</b></a></li>`).join('') +
+    `<li class="wechat"><button type="button" data-qr><b>微信扫码，加我聊聊</b><span class="micro">WeChat →</span></button></li>`;
 
   // The end of every page leads back into the corridor: to the same door, or on to the next one.
   doors.forEach((d, i) => {
@@ -143,7 +143,10 @@ function initBadge() {
   const el = $('badge');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   let y = 0, vy = 0, a = 0, va = 0, raf = 0, last = 0, drag = null;
-  const paint = () => { el.style.transform = `translate3d(-50%, ${y}px, 0) rotate(${a}rad)`; };
+  const paint = () => {
+    el.style.transform = `translate3d(-50%, ${y}px, 0) rotate(${a}rad)`;
+    el.style.setProperty('--a', a.toFixed(3)); // the sleeve's glare follows the swing
+  };
   const step = (now) => {
     const dt = Math.min((now - last) / 1000, 0.033);
     last = now;
