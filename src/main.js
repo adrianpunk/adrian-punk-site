@@ -7,6 +7,8 @@ import { renderContent } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
 import { createRoom, wallAngle } from './room.js';
+import { createTunnel } from './tunnel.js';
+import { createAboutScene, createToolsScene, createParlourScene, createContactScene } from './scenes.js';
 
 renderContent();
 initUI();
@@ -33,6 +35,7 @@ const loader = document.getElementById('loader');
 const loaderPct = document.getElementById('loaderPct');
 const roomHud = document.getElementById('roomHud');
 const roomNow = document.getElementById('roomNow');
+const roomHint = document.getElementById('roomHint');
 const veil = document.getElementById('veil');
 const cursor = document.getElementById('cursor');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -93,6 +96,16 @@ const room = createRoom({
   ],
 });
 
+// Behind each door, a small world for that section; the Writing door opens onto the tunnel of works.
+const tunnel = createTunnel();
+const behind = {
+  notes: createAboutScene(),
+  tools: createToolsScene(),
+  sessions: { ...tunnel, duration: 6 },
+  parlour: createParlourScene(),
+  contact: createContactScene(),
+};
+
 // ---------- Load model ----------
 new GLTFLoader().load(
   MODEL_URL,
@@ -147,6 +160,7 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   room.resize(w / h);
+  Object.values(behind).forEach((b) => b.resize(w / h));
   fitName();
   readScroll();
 }
@@ -194,10 +208,13 @@ function sectionGlyph(now) {
 }
 
 // Scroll timeline of the hero track (0..1):
-//   dive into the lens → look around the room, door by door → walk through door 01 onto the page.
+//   dive into the lens → look around the room, door by door → through door 01 into the About world
+//   → out through white onto the page.
 const DIVE = 0.36; // the original dive, compressed into [0, DIVE]; the screen is dark by ~0.30
-const ROOM_IN = 0.3, ROOM_OUT = 0.91;
-const LOOK = [0.35, 0.82]; // one full turn, pausing at each wall
+const ROOM_IN = 0.3, ROOM_OUT = 0.95;
+const LOOK = [0.35, 0.76]; // one full turn, pausing at each wall
+const SCENE = [0.832, 0.94]; // the world behind door 01, played by scroll
+const DOOR_IN = 1.2; // seconds from a door click to its world
 
 // Turn of the head in the room: 60° per wall with a pause in front of each.
 function lookYaw(u) {
@@ -205,17 +222,25 @@ function lookYaw(u) {
   return wallAngle(i) + (wallAngle(1) * smooth(0.3, 0.7, x - i));
 }
 
-// Clicking a door: turn to it, walk through, and land on that part of the page.
-let inRoom = false, flight = null, yawNow = 0;
+// Clicking a door: turn to it, walk through into its world, then land on that part of the page.
+// Once inside a world, a click, wheel, key or touch skips ahead to the page.
+let inLens = false, flight = null, yawNow = 0;
 addEventListener('click', (e) => {
-  if (!inRoom || flight || e.target.closest('a,button,.player')) return;
+  if (!inLens || e.target.closest('a,button,.player')) return;
+  if (flight) { skip(); return; }
   const d = room.pick((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1);
   if (!d) return;
   let to = wallAngle(d.k);
   while (to - yawNow > Math.PI) to -= Math.PI * 2;
   while (yawNow - to > Math.PI) to += Math.PI * 2;
-  flight = { door: d, from: yawNow, to, t0: performance.now() };
+  flight = { door: d, world: behind[d.section], from: yawNow, to, t0: performance.now() };
 });
+function skip() {
+  if (flight && flight.inside && !flight.landing) { flight.landing = true; land(flight.door.section); }
+}
+addEventListener('wheel', skip, { passive: true });
+addEventListener('touchstart', skip, { passive: true });
+addEventListener('keydown', skip);
 function land(section) {
   const el = document.getElementById(section);
   veil.style.background = el.dataset.bg;
@@ -242,11 +267,11 @@ function frame(now) {
   const p = smoothed;
   const pd = clamp(p / DIVE); // progress of the dive itself, timed as before at the old scale
   const companion = p > ROOM_OUT && !flight; // switched while the exit is fully white
-  inRoom = (p >= ROOM_IN && !companion) || !!flight;
+  inLens = (p >= ROOM_IN && !companion) || !!flight;
   // He steps aside for the Writing strip, which needs the full width.
-  const showFigure = inRoom || !companion || (wide.matches && face.section !== 'sessions');
+  const showFigure = inLens || !companion || (wide.matches && face.section !== 'sessions');
   // The room doesn't need the figure's model, so it shows even before that has loaded.
-  canvas.style.opacity = inRoom ? '1' : showFigure ? '' : '0';
+  canvas.style.opacity = inLens ? '1' : showFigure ? '' : '0';
   backdrop.style.opacity = companion ? 1 : 0;
   const t = easeInOut(clamp(pd / 0.78));
   const d0 = startDistance(), d1 = endDistance();
@@ -260,20 +285,52 @@ function frame(now) {
   nameEl.firstElementChild.style.transform = `scale(${sx * grow},${sy * grow})`;
   nameEl.style.opacity = 1 - smooth(0.02, 0.3, pd);
   hud.style.opacity = 1 - smooth(0, 0.12, pd);
-  // Dark as we enter the lens, clearing onto the room; white through the first door, clearing onto the page.
-  const white = p > 0.6;
-  iris.style.background = white ? '#fff' : '';
-  iris.style.opacity = white
-    ? smooth(0.875, 0.9, p) * (1 - smooth(0.92, 0.97, p))
-    : smooth(0.76, 0.84, pd) * (1 - smooth(0.31, 0.35, p));
-  iris.style.visibility = p >= 0.999 ? 'hidden' : '';
-  roomHud.style.opacity = flight ? 0 : smooth(0.34, 0.37, p) * (1 - smooth(0.82, 0.85, p));
-  roomHud.style.visibility = inRoom ? '' : 'hidden';
+  // The iris covers each cut: dark into the lens, orange through door 01, white out onto the page.
+  if (p < 0.6) {
+    iris.style.background = '';
+    iris.style.opacity = smooth(0.76, 0.84, pd) * (1 - smooth(0.31, 0.35, p));
+  } else if (p < 0.88) {
+    iris.style.background = '#ff5b14';
+    iris.style.opacity = smooth(0.815, 0.83, p) * (1 - smooth(0.835, 0.85, p));
+  } else {
+    iris.style.background = '#fff';
+    iris.style.opacity = smooth(0.925, 0.945, p) * (1 - smooth(0.955, 0.985, p));
+  }
+  iris.style.visibility = p >= 0.999 || flight ? 'hidden' : '';
 
   // The LED is also the porthole in the room, so it keeps drawing.
   led.state.eq = sound.levels(8);
 
-  if (inRoom) {
+  if (inLens) {
+    // Which world (if any) is on screen, and how far through it.
+    let world = null, wt = 0;
+    if (flight) {
+      const ft = (now - flight.t0) / 1000;
+      if (ft > DOOR_IN - 0.35 && !flight.flash) { flight.flash = true; veil.style.background = '#ff5b14'; veil.classList.add('on'); }
+      if (ft >= DOOR_IN) {
+        if (!flight.inside) { flight.inside = true; veil.classList.remove('on'); }
+        world = flight.world;
+        wt = clamp((ft - DOOR_IN) / world.duration);
+        if (wt >= 1) skip();
+      }
+    } else if (p >= SCENE[0]) {
+      world = behind.notes;
+      wt = clamp((p - SCENE[0]) / (SCENE[1] - SCENE[0]));
+    }
+
+    roomHud.style.visibility = '';
+    if (world) {
+      const door = flight ? flight.door : room.doors[0];
+      roomHud.style.opacity = 1;
+      roomHud.classList.toggle('on-light', world.scene.background.getHSL({}).l > 0.5);
+      roomNow.innerHTML = `<b>${door.no}</b> ${door.name}`;
+      roomHint.textContent = flight ? 'Click or scroll to skip' : 'Keep scrolling';
+      cursor.classList.remove('is-hover');
+      world.update(wt, pointer, now, dt);
+      renderer.render(world.scene, world.camera);
+      return;
+    }
+
     let yaw, walk = 0, walkTo = 0;
     const opens = {};
     if (flight) {
@@ -282,24 +339,27 @@ function frame(now) {
       walkTo = flight.door.k;
       opens[walkTo] = smooth(0.35, 0.8, ft);
       walk = easeInOut(clamp((ft - 0.5) / 0.7)) * 0.95;
-      if (ft > 0.95 && !flight.landing) { flight.landing = true; land(flight.door.section); }
     } else {
       const u = clamp((p - LOOK[0]) / (LOOK[1] - LOOK[0]));
       yaw = lookYaw(u);
-      opens[0] = smooth(0.82, 0.86, p);
-      walk = smooth(0.83, 0.9, p);
+      opens[0] = smooth(0.755, 0.79, p);
+      walk = smooth(0.77, 0.83, p);
     }
     yawNow = yaw;
+    roomHud.classList.remove('on-light');
     room.update({ yaw, walk, walkTo, opens, pointer, dt, nudge: finePointer.matches });
+    roomHud.style.opacity = flight ? 0 : smooth(0.34, 0.37, p) * (1 - smooth(0.76, 0.79, p));
     const facing = ((Math.round(yaw / wallAngle(1)) % 6) + 6) % 6;
     const door = room.doors.find((x) => x.k === facing);
     roomNow.innerHTML = door ? `<b>${door.no}</b> ${door.name}` : '<b>00</b> Lens';
+    roomHint.textContent = 'Scroll to look around · Click a door to enter';
     cursor.classList.toggle('is-hover', !!room.hovered);
     led.state.gazeX = pointer.sx; led.state.gazeY = pointer.sy; led.state.close = 0; led.state.glyph = null;
     led.draw(now);
     renderer.render(room.scene, room.camera);
     return;
   }
+  roomHud.style.visibility = 'hidden';
 
   if (companion) {
     // Turned a little toward the page content, still following the pointer.
@@ -340,4 +400,6 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
-if (import.meta.env.DEV) window.__debug = { camera, ledDisc, room, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; } };
+if (import.meta.env.DEV) window.__debug = { camera, ledDisc, room, behind, get p() { return smoothed; }, settle() { readScroll(); smoothed = progress; },
+  // Jump straight into the world behind door k, `at` seconds in.
+  enter(k, at = DOOR_IN) { const d = room.doors[k]; flight = { door: d, world: behind[d.section], from: wallAngle(k), to: wallAngle(k), t0: performance.now() - at * 1000, flash: true }; } };
