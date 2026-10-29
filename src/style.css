@@ -1,5 +1,5 @@
-/* Type: numbers in Times New Roman, Latin in Inter Tight, Chinese in Zhuque Fangsong
-   (OFL, cut to the site's characters by scripts/subset-zhuque.sh). */
+/* Type: Latin in Inter Tight, numbers in Times New Roman, Chinese in a plain heiti (PingFang).
+   About alone sets its Chinese in Zhuque Fangsong (OFL, cut to the site's characters by scripts/subset-zhuque.sh). */
 @font-face { font-family: "Special Elite"; src: url("/fonts/special-elite-typewriter.ttf") format("truetype"); font-display: swap; }
 @font-face { font-family: "Num"; src: local("Times New Roman"), local("TimesNewRomanPSMT"); unicode-range: U+0030-0039; }
 @font-face { font-family: "Zhuque Fangsong"; src: url("/fonts/zhuque-fangsong.woff2") format("woff2"); font-display: swap; unicode-range: U+2000-FFFF; }
@@ -12,7 +12,7 @@
   --blue: #2525c8;
   --black: #080807;
   --led: #080b0c;
-  --font: "Num", "Inter Tight", "Zhuque Fangsong", "Noto Serif SC", "Songti SC", sans-serif;
+  --font: "Num", "Inter Tight", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --ui: "Inter Tight", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --grotesk: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -132,13 +132,13 @@ main { position: relative; z-index: 5; background: var(--bg); }
 
 /* About: a greeting, then the facts on a label | text grid (labels in the grotesk, small, like a colophon). */
 .about { min-height: 100vh; min-height: 100svh; padding: clamp(96px, 12vh, 140px) var(--gutter) clamp(40px, 6vh, 64px); display: flex; flex-direction: column; justify-content: center; }
-.about-col { width: min(100%, 600px); margin: 0 auto; text-align: center; font-family: var(--grotesk), "Zhuque Fangsong", serif; } /* About's English (digits too) in the same grotesk as the later pages */
+.about-col { width: min(100%, 600px); margin: 0 auto; text-align: center; font-family: "Inter Tight", "Zhuque Fangsong", "PingFang SC", sans-serif; } /* About's English (digits too) in the same grotesk as the later pages */
 .about-photo { display: block; width: 96px; height: 96px; margin: 0 auto 26px; object-fit: cover; }
 .about-hello { font-size: clamp(36px, 4.2vw, 60px); font-weight: 600; letter-spacing: -0.055em; line-height: 1.1; margin-bottom: 26px; }
 .about-hello .sq-dot { margin-left: 0.08em; }
 .about-text p { font-size: 15px; line-height: 1.9; color: color-mix(in srgb, var(--fg) 82%, var(--bg)); margin-bottom: 0.8em; }
 .nowrap { white-space: nowrap; }
-.about-social { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 18px; font-size: 14px; }
+.about-social { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 22px; font-size: 18px; }
 .brand-link {
   display: inline-flex; align-items: center; gap: 0.3em; vertical-align: -0.14em; padding: 0; border: 0; background: none; cursor: pointer;
   font: 400 1em/1 var(--font); color: var(--fg); text-decoration: none; transition: color 0.2s, opacity 0.2s;
