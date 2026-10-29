@@ -57,12 +57,13 @@ html.intro-on { overflow: hidden; }
 }
 .intro.is-out { opacity: 0; pointer-events: none; }
 .intro-box {
-  width: min(100%, 720px); display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 26px;
+  width: min(100%, 900px); display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 26px;
   border: 1px solid var(--line); border-radius: 999px; background: var(--bg); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
   animation: box-in 0.6s var(--ease) both;
 }
 @keyframes box-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
 .intro-text { position: relative; flex: 1; min-width: 0; font-family: "Special Elite", "Courier New", monospace; /* the typewriter keeps its own face */ font-size: clamp(20px, 2.4vw, 26px); line-height: 1.4; white-space: nowrap; transition: transform 0.55s var(--ease), opacity 0.45s; }
+.intro-text b { font-size: 1.7em; font-weight: 400; line-height: 1; } /* the W of Welcome, the P of Punk */
 .intro-hint { position: absolute; left: 0; top: 0; color: #b0b0b0; font-family: var(--font); font-weight: 600; font-size: 0.72em; line-height: 1.95; }
 .intro.is-typing .intro-hint { display: none; }
 .caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: var(--fg); animation: blink 1s steps(1) infinite; }
@@ -406,6 +407,8 @@ html.menu-on { overflow: hidden; }
   .contact-meta { align-items: flex-start; }
 }
 @media (max-width: 700px) {
+  .intro-box { border-radius: 28px; }
+  .intro-text { white-space: normal; font-size: 17px; } /* the long line wraps on a phone */
   .book-cap { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {

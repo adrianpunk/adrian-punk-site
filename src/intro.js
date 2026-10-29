@@ -1,7 +1,21 @@
-// The opening: a long message box. "This is Punk's website" types itself in, key by key, and once the model
+// The opening: a long message box. "Welcome to Punk's personal website" types itself in, key by key
+// (the W of Welcome and the P of Punk set bigger), and once the model
 // is in, the black send arrow gets pressed and the message flies off. Once per visit; a click
 // anywhere (or on the arrow) sends it straight away.
-const MESSAGE = "This is Punk's website";
+// The line in pieces; `big` ones are set larger.
+const PARTS = [['W', true], ['elcome to ', false], ['P', true], ["unk's personal website", false]];
+const MESSAGE = PARTS.map(([t]) => t).join('');
+// The first n characters of the line, each piece in its own span.
+function typed(n) {
+  let html = '';
+  for (const [t, big] of PARTS) {
+    if (n <= 0) break;
+    const part = t.slice(0, n).replace(/'/g, '&#39;');
+    html += big ? `<b>${part}</b>` : part;
+    n -= t.length;
+  }
+  return html;
+}
 const MAX = 7000; // the most it waits for a slow load
 
 export function startIntro() {
@@ -17,29 +31,29 @@ export function startIntro() {
   }
   document.documentElement.classList.add('intro-on');
   const t0 = performance.now();
-  let loaded = false, typed = false, shown = 0, target = 0, gone = false;
+  let loaded = false, done = false, shown = 0, target = 0, gone = false;
 
   // A typist's rhythm: a beat before starting, uneven keys, a little pause at the space.
   let i = 0;
   const key = () => {
     if (gone) return;
     i++;
-    text.textContent = MESSAGE.slice(0, i);
+    text.innerHTML = typed(i);
     el.classList.add('is-typing');
     send.classList.add('is-ready');
     if (i < MESSAGE.length) setTimeout(key, (MESSAGE[i] === ' ' ? 220 : 90) + Math.random() * 70);
-    else { typed = true; setTimeout(check, 450); }
+    else { done = true; setTimeout(check, 450); }
   };
   setTimeout(key, 700);
 
   const check = () => {
-    if (gone || !typed) return;
+    if (gone || !done) return;
     if (loaded || performance.now() - t0 > MAX) press();
   };
   const press = () => {
     if (gone) return;
     gone = true;
-    text.textContent = MESSAGE;
+    text.innerHTML = typed(MESSAGE.length);
     pct.textContent = '100';
     el.classList.add('is-typing');
     send.classList.add('is-ready', 'is-pressed');
