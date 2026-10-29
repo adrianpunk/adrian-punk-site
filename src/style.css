@@ -209,7 +209,6 @@ main { position: relative; z-index: 5; background: var(--bg); }
 
 /* Journey: black, big cream words in staggered rows, a picture set in each line. */
 .journey { --cream: #f6f1e7; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; background: #000; color: var(--cream); padding: clamp(72px, 9vw, 140px) var(--gutter) clamp(90px, 11vw, 170px); }
-.journey-label { display: flex; align-items: center; gap: 10px; width: min(100%, 1380px); margin: 0 auto clamp(20px, 2.4vw, 36px); font-size: 17px; font-weight: 700; }
 .journey-rows { list-style: none; width: min(100%, 1380px); margin: 0 auto; }
 .journey-rows li {
   --dir: 1; display: flex; align-items: center; width: max-content; max-width: 100%;

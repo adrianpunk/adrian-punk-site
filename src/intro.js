@@ -1,7 +1,7 @@
-// The opening: a long message box. "hello punk" types itself in, key by key, and once the model
+// The opening: a long message box. "This is Punk's website" types itself in, key by key, and once the model
 // is in, the black send arrow gets pressed and the message flies off. Once per visit; a click
 // anywhere (or on the arrow) sends it straight away.
-const MESSAGE = 'hello punk';
+const MESSAGE = "This is Punk's website";
 const MAX = 7000; // the most it waits for a slow load
 
 export function startIntro() {
