@@ -44,20 +44,39 @@ export function initWordmark(svg, text = 'Adrian.Punk') {
   pieces.forEach((it) => { it.start = (it.x / width) * 0.6; it.p.style.strokeDasharray = it.len; });
 
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // The scroll sets where it should be; each frame eases toward it, so wheel steps don't make it jump.
-  let target = 0, shown = -1, raf = 0;
+  // Two ways in. Scrolling down to it, the scroll sets how far along it is (whole at the very end), and
+  // each frame eases toward that so wheel steps don't make it jump. Jumping to it (a menu link, "Work
+  // with me", a reload down here), it builds itself once, from nothing to whole, on its own clock.
+  const PLAY = 1800; // ms for the build when you jump in
+  const footer = svg.closest('footer') || svg.parentNode;
+  const here = () => { const r = footer.getBoundingClientRect(); return r.top < innerHeight * 0.5 && r.bottom > 0; };
+  let target = 0, shown = -1, raf = 0, play = 0, jumping = 0, lastY = scrollY;
+  document.addEventListener('click', (e) => { if (e.target.closest('a[href^="#"]')) jumping = performance.now() + 2500; }, true);
+  const kick = () => { if (!raf) raf = requestAnimationFrame(draw); };
   const read = () => {
     // 0 as the mark's top comes up into view, 1 when the page is scrolled to the very end (the footer is pinned meanwhile)
     const r = svg.getBoundingClientRect();
     const seen = innerHeight - r.top, left = document.documentElement.scrollHeight - innerHeight - scrollY;
     target = still ? 1 : clamp(seen / Math.max(1, seen + left));
-    if (!raf) raf = requestAnimationFrame(draw);
+    const leap = Math.abs(scrollY - lastY) > innerHeight * 1.5; // a jump, not a scroll
+    lastY = scrollY;
+    if (!play && !still && here() && (leap || performance.now() < jumping)) { play = performance.now(); jumping = 0; }
+    if (play && !here()) play = 0; // gone back up: follow the scroll again
+    kick();
   };
-  const draw = () => {
+  const draw = (now) => {
     raf = 0;
-    shown = shown < 0 ? target : shown + (target - shown) * 0.14;
-    if (Math.abs(target - shown) < 0.0005) shown = target;
-    else raf = requestAnimationFrame(draw);
+    if (play) {
+      shown = clamp((now - play) / PLAY); // the pieces' own stagger and easing do the rest
+      if (shown < 1) kick();
+    } else if (performance.now() < jumping) {
+      shown = 0; // on the way down after a jump link: stay empty until it can build
+      kick();
+    } else {
+      shown = shown < 0 ? target : shown + (target - shown) * 0.14;
+      if (Math.abs(target - shown) < 0.0005) shown = target;
+      else kick();
+    }
     for (const it of pieces) {
       const t = clamp((shown - it.start) / 0.4), e = ease(t);
       it.p.style.strokeDashoffset = (it.len * (1 - e)).toFixed(1);
@@ -67,5 +86,6 @@ export function initWordmark(svg, text = 'Adrian.Punk') {
   };
   addEventListener('scroll', read, { passive: true });
   addEventListener('resize', read);
+  if (here() && !still) { play = performance.now() + 300; shown = 0; } // opened (or reloaded) down here
   read();
 }

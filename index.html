@@ -11,6 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300..700;1,400&display=swap" />
   <link rel="stylesheet" href="/src/style.css" />
+  <!-- The figure is the first thing to show: start fetching it before any script runs. -->
+  <link rel="preload" href="/models/camera_head_sax.glb" as="fetch" type="model/gltf-binary" crossorigin />
 </head>
 <body>
   <!-- The camera-head character; scrolling dives into his lens, then flies through his works in space. -->
@@ -18,7 +20,7 @@
   <!-- Black as the camera enters the lens; white as it comes out the far side of the black hole. -->
   <div class="iris" id="iris" aria-hidden="true"></div>
   <div class="flash" id="flash" aria-hidden="true"></div>
-  <!-- The opening: "Welcome to Punk's personal website" types itself into a message box, then the send arrow is pressed. -->
+  <!-- The opening: "Welcome to Punk's blog" types itself into a message box, then the send arrow is pressed. -->
   <div class="intro" id="intro" aria-hidden="true">
     <div class="intro-box">
       <p class="intro-text"><span class="intro-hint">Message Punk…</span><span id="introText"></span><i class="caret"></i></p>

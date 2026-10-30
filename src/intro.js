@@ -1,9 +1,9 @@
-// The opening: a long message box. "Welcome to Punk's personal website" types itself in, key by key
+// The opening: a long message box. "Welcome to Punk's blog" types itself in, key by key
 // (the W of Welcome and the P of Punk set bigger), and once the model
 // is in, the black send arrow gets pressed and the message flies off. Once per visit; a click
 // anywhere (or on the arrow) sends it straight away.
 // The line in pieces; `big` ones are set larger.
-const PARTS = [['W', true], ['elcome to ', false], ['P', true], ["unk's personal website", false]];
+const PARTS = [['W', true], ['elcome to ', false], ['P', true], ["unk's blog", false]];
 const MESSAGE = PARTS.map(([t]) => t).join('');
 // The first n characters of the line, each piece in its own span.
 function typed(n) {

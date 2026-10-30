@@ -184,8 +184,9 @@ export function createSpace(works, base) {
     return hover ? hover.userData : null;
   }
 
-  // The first few covers start loading during the dive, so the tunnel opens full.
-  const warm = () => items.slice(0, 12).forEach((m) => m.userData.loaded || load(m));
+  // Covers start loading ahead of the flight: the first few during the dive, or all of them
+  // (in tunnel order) as soon as the figure has loaded, so the tunnel is full when you get there.
+  const warm = (n = 12) => items.slice(0, n).forEach((m) => m.userData.loaded || load(m));
 
   function resize(aspect) {
     camera.aspect = aspect;

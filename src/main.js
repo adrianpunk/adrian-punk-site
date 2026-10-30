@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLED } from './led.js';
 import { initUI } from './ui.js';
@@ -83,7 +84,8 @@ ledDisc.position.copy(LENS.center);
 rig.add(ledDisc);
 
 // ---------- Load model ----------
-new GLTFLoader().load(
+// The model is meshopt-compressed with WebP textures (1.5 MB, was 27 MB); see README for how it was made.
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(
   MODEL_URL,
   (gltf) => {
     gltf.scene.traverse((o) => {
@@ -93,6 +95,7 @@ new GLTFLoader().load(
     loader.classList.add('is-done');
     canvas.classList.add('is-ready');
     intro.ready();
+    space.warm(Infinity); // with the figure in, fetch every cover in the tunnel (≈1 MB) before the dive
   },
   (e) => {
     if (e.total) { loaderPct.textContent = Math.round((e.loaded / e.total) * 100); intro.progress(e.loaded / e.total); }
@@ -101,6 +104,7 @@ new GLTFLoader().load(
     console.error(err);
     loader.textContent = 'Model failed to load';
     intro.ready();
+    space.warm(Infinity);
   }
 );
 
