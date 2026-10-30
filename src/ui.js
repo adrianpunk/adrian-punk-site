@@ -25,6 +25,9 @@ export function initUI() {
 
   initPlayer();
   initTheme();
+  // About's "Punk" gets its blue underline once the page is on screen.
+  const hello = document.querySelector('.about-hello');
+  new IntersectionObserver(([en], io) => { if (en.isIntersecting) { hello.classList.add('in'); io.disconnect(); } }, { threshold: 0.6 }).observe(hello);
   // On the last page "Work with me" turns blue.
   new IntersectionObserver(([en]) => document.documentElement.classList.toggle('at-end', en.isIntersecting), { rootMargin: '0px 0px -40% 0px' }).observe(document.getElementById('contact'));
   initMenu();

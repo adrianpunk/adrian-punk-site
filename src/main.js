@@ -102,7 +102,7 @@ new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(
   },
   (err) => {
     console.error(err);
-    loader.textContent = 'Model failed to load';
+    loader.lastElementChild.textContent = 'Model failed to load';
     intro.ready();
     space.warm(Infinity);
   }

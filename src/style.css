@@ -47,7 +47,6 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 #scene.is-ready { opacity: 1; }
 .iris { position: fixed; inset: 0; z-index: 3; background: #000; opacity: 0; pointer-events: none; }
 .flash { position: fixed; inset: 0; z-index: 3; background: var(--bg); opacity: 0; pointer-events: none; }
-html.over-work, html.over-work body { cursor: pointer; }
 
 /* ---------- Opening: "hello punk" typed into a message box, then sent ---------- */
 html.intro-on { overflow: hidden; }
@@ -76,7 +75,7 @@ html.intro-on { overflow: hidden; }
 }
 .intro-send.is-ready { background: var(--fg); }
 .intro-send.is-pressed { transform: scale(0.86); background: var(--blue); }
-.intro-count { position: absolute; right: var(--gutter); bottom: var(--gutter); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--grey); }
+.intro-count { position: absolute; right: var(--gutter); bottom: var(--gutter); }
 
 /* ---------- Hero: scroll track + sticky stage ---------- */
 .hero { position: relative; height: 1000vh; }
@@ -98,8 +97,21 @@ html.intro-on { overflow: hidden; }
 .corner.bc { bottom: var(--gutter); left: 50%; transform: translateX(-50%); }
 .brand { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
 .scroll-hint { font-size: 13px; font-weight: 600; color: var(--grey); }
-.loader { position: absolute; z-index: 4; left: 50%; bottom: 20%; transform: translateX(-50%); font-size: 13px; font-weight: 600; color: var(--grey); transition: opacity 0.5s; }
+.loader { position: absolute; z-index: 4; left: 50%; bottom: 16%; transform: translateX(-50%);  transition: opacity 0.5s; }
 .loader.is-done { opacity: 0; }
+/* Loading: a blue eighth note hopping, the percentage small beneath it */
+.loader, .intro-count { display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--grey); }
+.note8 { width: 26px; height: 34px; color: var(--blue); overflow: visible; transform-origin: 50% 100%; animation: hop 0.9s cubic-bezier(0.3, 0, 0.3, 1) infinite; }
+@keyframes hop {
+  0%, 100% { transform: translateY(0) scale(1.08, 0.9); }
+  12% { transform: translateY(0) scale(1, 1); }
+  45% { transform: translateY(-16px) rotate(-8deg) scale(0.96, 1.06); }
+  70% { transform: translateY(-4px) rotate(4deg); }
+  85% { transform: translateY(0) scale(1.06, 0.94); }
+}
+/* The pointer: a small blue square everywhere, a little bigger over anything you can click */
+html, body { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Crect width='12' height='12' fill='%232525c8'/%3E%3C/svg%3E") 6 6, auto; }
+a, button, [role="button"], canvas, .book, .intro, html.over-work, html.over-work body { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18'%3E%3Crect width='18' height='18' fill='%232525c8'/%3E%3C/svg%3E") 9 9, pointer !important; }
 
 /* ---------- Inside the lens: plain sections on white ---------- */
 main { position: relative; z-index: 5; background: var(--bg); }
@@ -137,6 +149,10 @@ main { position: relative; z-index: 5; background: var(--bg); }
 .about-photo { display: block; width: 96px; height: 96px; margin: 0 auto 26px; object-fit: cover; }
 .about-hello { font-size: clamp(36px, 4.2vw, 60px); font-weight: 600; letter-spacing: -0.055em; line-height: 1.1; margin-bottom: 26px; }
 .about-hello .sq-dot { margin-left: 0.08em; }
+/* when About comes on screen, a thick blue bar draws itself in through the lower half of "Punk", left to right */
+.hello-punk { position: relative; z-index: 0; display: inline-block; }
+.hello-punk::after { content: ""; position: absolute; z-index: -1; left: -0.04em; right: -0.04em; bottom: 0.06em; height: 0.38em; background: var(--blue); transform: scaleX(0); transform-origin: left; transition: transform 0.9s var(--ease) 0.25s; }
+.about-hello.in .hello-punk::after { transform: scaleX(1); }
 .about-text p { font-size: 15px; line-height: 1.9; color: color-mix(in srgb, var(--fg) 82%, var(--bg)); margin-bottom: 0.8em; }
 .nowrap { white-space: nowrap; }
 .about-social { display: flex; justify-content: center; align-items: center; gap: 22px; margin-top: 22px; font-size: 18px; }
