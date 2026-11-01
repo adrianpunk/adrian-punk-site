@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN" data-root="../">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Articles · Adrian.Punk</title>
+  <meta name="description" content="Adrian.Punk 的文章，分为海报提示词、AI 视频与视觉、AI 小白教程三类，每类按模块整理。" />
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,300..700;1,400&display=swap" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <a class="brand blog-brand" href="../">Adrian.Punk</a>
+  <main class="blog">
+    <header class="blog-head">
+      <h1>Articles</h1>
+      <div class="map" id="tutorialMap"></div>
+    </header>
+    <nav class="blog-tabs" id="blogTabs" aria-label="分类"></nav>
+    <div id="blogCats"></div>
+  </main>
+  <footer class="blog-foot"><a href="../">← Home</a><span>© 2026 Adrian.Punk</span></footer>
+  <script type="module" src="/src/articles.js"></script>
+</body>
+</html>

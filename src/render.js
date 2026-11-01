@@ -11,7 +11,7 @@ const ext = 'target="_blank" rel="noopener noreferrer"';
 const $ = (id) => document.getElementById(id);
 
 export function renderContent() {
-  initBook({ book: $('book'), tabs: $('bookTabs'), prev: $('bookPrev'), next: $('bookNext'), caption: $('bookCap') }, shelves, BASE);
+  initBook({ book: $('book'), tabs: $('bookTabs'), caption: $('bookCap') }, shelves, BASE);
   renderJourney();
 
   // The two ways to meet, as two tickets (one blue, one white): a black-and-white picture, the name pressed
@@ -40,19 +40,6 @@ export function renderContent() {
   $('links').innerHTML = links.map((l) => `<li><a href="${l.href}" ${ext}><span>${esc(l.label)}</span><b>${esc(l.handle)}</b></a></li>`).join('') +
     `<li><a href="https://aftno.com/" ${ext}><span>社群</span><b>AfterNoise</b></a></li>` +
     `<li><button type="button" data-copy="${wechat}"><span>微信</span><b>${wechat}</b></button></li>`;
-
-  // Anything with data-copy puts its text on the clipboard (the WeChat ID).
-  const toast = $('toast');
-  let hide = 0;
-  document.addEventListener('click', async (e) => {
-    const el = e.target.closest('[data-copy]');
-    if (!el) return;
-    try { await navigator.clipboard.writeText(el.dataset.copy); toast.textContent = `已复制微信号 ${el.dataset.copy}`; }
-    catch { toast.textContent = `微信号 ${el.dataset.copy}`; }
-    toast.classList.add('is-on');
-    clearTimeout(hide);
-    hide = setTimeout(() => toast.classList.remove('is-on'), 2200);
-  });
 
   initWordmark($('wordmark'));
   initFaceHover();

@@ -1,6 +1,6 @@
 # Adrian.Punk — Portfolio
 
-个人网站。开屏是一个长长的对话框，自动打出 Welcome to Punk's blog（Welcome 的 W 和 Punk 的 P 更大），再按下右边的黑色发送箭头。首页镜头钻进相机头人物的镜头，穿过去是一条深空隧道：浏览量最高的 60 篇 X 长文按浏览量从高到低迎面飞来，尽头是一颗白色的土星，飞进去进入 About。About 是一句问候加三段介绍，链接都带图标，一屏放下。接着是 Works：整页左白右蓝，中间一本书，每一页就是一张封面从中间对折，翻一页换下一篇；Tutorials 30 篇、Prompts 30 篇。然后是黑底的 Journey（六个标题错落排开，指到哪个就在行内展开它的图）、Products（顶部是巨大的浅色水印 Creator’s Workflow；一条 3D 沙盘生产线，四台机器对应四个工具）、Chat（瑞士海报式排版：巨大的 Chat，一蓝一白两张错位的票，瑞士风排版、纸纹和压印字，票上是 Codex 画的手绘咖啡杯和电话；旁边一张圆桌，桌上一杯冒热气的咖啡），最后是黑色的 Contact，尾部会停住一段，Adrian.Punk 由几何笔画拼成，随滚动平滑地从左到右组装。左上角只有 Adrian.Punk（回到开头），右上角常驻音乐按钮、月牙（深色模式）、Work with me 和 MENU，MENU 从右侧滑出黑色目录。
+个人网站。开屏是一个长长的对话框，自动打出 Welcome to Punk's blog（Welcome 的 W 和 Punk 的 P 更大），再按下右边的黑色发送箭头。首页镜头钻进相机头人物的镜头，穿过去是一条深空隧道：浏览量最高的 60 篇 X 长文按浏览量从高到低迎面飞来，尽头是一颗白色的土星，飞进去进入 About。About 是一句问候加三段介绍，链接都带图标，一屏放下。接着是 Works：整页左白右蓝，中间一本书，每一页就是一张封面从中间对折，翻一页换下一篇；分 Tutorials 和 Prompts 两类，点分类就翻开那一类的书，点封面左右两侧翻页。Works 左上角的 All articles 通往独立的 Articles 页（`articles/index.html`，线上是 hipunk.me/articles/），标题旁是一块蓝色热力图（一篇一格，按浏览量从深到浅）：分海报提示词、AI 视频与视觉、AI 小白教程三类，每类下面是若干模块。整页是一套两栏网格：左边模块名和封面，右边文章列表或海报封面。然后是黑底的 Journey（六个标题错落排开，指到哪个就在行内展开它的图）、Products（顶部是巨大的浅色水印 Creator’s Workflow；一条 3D 沙盘生产线，四台机器对应四个工具）、Chat（瑞士海报式排版：巨大的 Chat，一蓝一白两张错位的票，瑞士风排版、纸纹和压印字，票上是 Codex 画的手绘咖啡杯和电话；旁边一张圆桌，桌上一杯冒热气的咖啡），最后是黑色的 Contact，尾部会停住一段，Adrian.Punk 由几何笔画拼成，随滚动平滑地从左到右组装。左上角只有 Adrian.Punk（回到开头），右上角常驻音乐按钮、月牙（深色模式）、友情链接（链条图标）、Work with me 和 MENU，MENU 从右侧滑出黑色目录。
 
 字体：英文统一用 Inter Tight，数字用 Times New Roman，中文用黑体（苹方）；只有 About 的中文用朱雀仿宋（OFL，`public/fonts/zhuque-fangsong.woff2`，只含网站用到的字；改了中文文案后跑一次 `scripts/subset-zhuque.sh <朱雀仿宋.ttf>` 重新裁字），About 的数字也用 Inter Tight；开屏打字机仍是 Special Elite。从 About 开始，每页一屏高，滚动会停靠在页面上。
 
@@ -33,6 +33,8 @@ npm run build   # 输出到 dist/
 - `src/sound.js` — 萨克斯音轨（默认关闭）与频谱，驱动镜头里的 LED 均衡器
 - `src/ui.js` — 滚动渐显、音乐按钮、深色模式按钮、目录
 - `src/theme.js` — 浅色 / 深色，记住选择，没选过就跟随系统
+- `src/chrome.js` — 两个页面共用的顶栏、目录、友情链接和复制微信号
+- `src/articles.js` — Articles 页的分类、模块和热力图
 - `src/book.js` — Works 那本书：分页、翻页、分类跳转
 - `src/table.js` — Parlour 的圆桌和咖啡（three.js）
 - `src/waveform.json` — 音轨波形（换音频后需重新生成）
@@ -40,7 +42,7 @@ npm run build   # 输出到 dist/
 - `public/audio/saxlele.mp3` — Adrian 自己的萨克斯录音
 - `public/works/` — 60 篇 X 长文的封面（文件名前缀是浏览量排名）
 
-新增一篇作品：把封面放进 `public/works/`，在 `src/content.js` 的 `works` 里按浏览量插入一行。书里的两类在同文件的 `tutorials` / `prompts` 两个列表里；书用的是 `public/works/book/<文章 id>.webp` 的大图（1600 宽）；`cover: null` 的会用标题排一张临时封面。
+新增一篇作品：把封面放进 `public/works/`，在 `src/content.js` 的 `works` 里按浏览量插入一行。Articles 页的文章在同文件的 `categories` 里，按分类和模块放；书的 60 篇由它下面的 id 列表决定；友情链接改 `friends`；书用的是 `public/works/book/<文章 id>.webp` 的大图（1600 宽）；`cover: null` 的会用标题排一张临时封面。
 
 调镜头动画：`src/main.js` 里的 `LENS`（镜头位置/半径）、`DIVE`（钻镜头占整段滚动的比例）、`.hero` 的高度（`src/style.css`，决定滚动距离）、以及 `frame()` 里各个 `smooth(a, b, p)` 区间。
 

@@ -4,6 +4,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { createLED } from './led.js';
 import { initUI } from './ui.js';
+import { mountChrome } from './chrome.js';
 import { renderContent } from './render.js';
 import { sound } from './sound.js';
 import { face } from './face.js';
@@ -12,6 +13,7 @@ import { createSpace } from './space.js';
 import { works } from './content.js';
 
 const intro = startIntro();
+mountChrome();
 renderContent();
 initUI();
 
