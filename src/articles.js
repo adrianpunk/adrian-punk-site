@@ -37,8 +37,9 @@ function drawHeat(i) {
   const shown = i ? postsOf(categories[i - 1]).sort((a, b) => views(b) - views(a)) : ranked;
   const moduleCount = i ? categories[i - 1].modules.length : categories.reduce((n, c) => n + c.modules.length, 0);
   // One grid for every view, so cells never change size: this view's articles first, the other places left blank.
-  heat.innerHTML = shown.map((p) =>
-    `<a class="h${step.get(p)}" href="${postUrl(p[1])}" ${ARTICLE} data-tip="${esc(p[0])} · ${esc(p[3])}浏览" aria-label="${esc(p[0])}"></a>`).join('') +
+  // Each cell lights up in turn like an LED: in order, most-viewed first, with a little unevenness.
+  heat.innerHTML = shown.map((p, n) =>
+    `<a class="h${step.get(p)}" style="--on:${Math.round(n * (1100 / shown.length) + Math.random() * 90)}ms" href="${postUrl(p[1])}" ${ARTICLE} data-tip="${esc(p[0])} · ${esc(p[3])}浏览" aria-label="${esc(p[0])}"></a>`).join('') +
     '<i></i>'.repeat(ranked.length - shown.length);
   summary = `${shown.length} 篇文章 · ${moduleCount} 个模块 · ${Math.round(shown.reduce((n, p) => n + views(p), 0))} 万浏览`;
   tip.textContent = summary;
