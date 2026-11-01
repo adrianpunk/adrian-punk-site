@@ -452,12 +452,13 @@ html.menu-on { overflow: hidden; }
 /* ---------- The articles page: three categories on one two-column grid ---------- */
 .blog-brand { position: absolute; z-index: 6; top: var(--gutter); left: var(--gutter); }
 .blog { width: min(100% - 2 * var(--gutter), 1380px); margin: 0 auto; padding-top: clamp(96px, 13vh, 140px); }
-.blog-head { --title: clamp(56px, 7.2vw, 112px); display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 12px clamp(24px, 4vw, 64px); }
-/* the title is trimmed to its capitals, and the heatmap stretches to exactly that height */
-.blog-head h1 { font: 600 var(--title)/0.73 var(--grotesk); letter-spacing: -0.06em; white-space: nowrap; text-box: trim-both cap alphabetic; }
-.map { display: contents; }
-/* the heatmap: a plain block of cells in five steps of the blue, one quiet line under it */
-.heat { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; min-height: 0; }
+/* The top, Swiss: one huge word (All's title, or the category's), a rule, then the categories as a plain list on
+   the left and the heatmap filling the right, on the same two columns as everything below. */
+.blog-head h1 { font: 600 clamp(62px, 12.4vw, 190px)/0.82 var(--grotesk); letter-spacing: -0.065em; white-space: nowrap; margin-left: -0.04em; }
+.head-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(24px, 4vw, 64px); margin-top: clamp(18px, 2.2vw, 30px); padding: 12px 0 clamp(20px, 2.4vw, 32px); border-top: 1px solid var(--fg); border-bottom: 1px solid var(--fg); }
+.map { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.heat { flex: 1; min-height: clamp(84px, 8vw, 116px); display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; }
+.heat i { display: block; background: color-mix(in srgb, var(--fg) 5%, var(--bg)); }
 .heat a { display: block; transition: background-color 0.15s; }
 .heat a:hover, .heat a:focus-visible { background: var(--fg); outline: none; }
 .h0 { background: color-mix(in srgb, var(--blue) 10%, var(--bg)); }
@@ -465,32 +466,31 @@ html.menu-on { overflow: hidden; }
 .h2 { background: color-mix(in srgb, var(--blue) 46%, var(--bg)); }
 .h3 { background: color-mix(in srgb, var(--blue) 72%, var(--bg)); }
 .h4 { background: var(--blue); }
-.heat-foot { grid-column: 2; display: flex; justify-content: space-between; align-items: center; gap: 24px; font-size: 13px; color: var(--grey); }
+.heat-foot { display: flex; justify-content: space-between; align-items: center; gap: 24px; font-size: 13px; color: var(--grey); }
 .heat-foot span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .heat-foot span.is-on { color: var(--fg); }
 .heat-foot i { flex: none; display: flex; gap: 2px; }
 .heat-foot b { display: block; width: 10px; height: 10px; }
-.blog-tabs { position: sticky; z-index: 3; top: 0; scroll-margin-top: 0; display: flex; flex-wrap: wrap; gap: 4px clamp(18px, 3vw, 44px); margin-top: clamp(18px, 2vw, 28px); padding: 14px 0; border-top: 1px solid var(--fg); border-bottom: 1px solid var(--line); background: var(--bg); }
-.blog-tabs button { position: relative; font: 600 clamp(17px, 1.7vw, 24px)/1.2 var(--ui); letter-spacing: -0.03em; color: var(--grey); transition: color 0.2s; }
-.blog-tabs sup { margin-left: 0.2em; font-size: 0.55em; letter-spacing: 0; }
-.blog-tabs button::before { content: ""; position: absolute; top: -15px; left: 0; right: 0; height: 3px; background: var(--blue); transform: scaleX(0); transform-origin: left; transition: transform 0.4s var(--ease); }
+.blog-tabs { display: block; scroll-margin-top: 16px; }
+.blog-tabs button { display: grid; grid-template-columns: minmax(0, 1fr) 9px 2em; align-items: baseline; gap: 10px; width: 100%; padding: 3px 0; text-align: left; font: 600 clamp(18px, 1.7vw, 24px)/1.25 var(--grotesk); letter-spacing: -0.03em; color: var(--grey); transition: color 0.2s; }
+.blog-tabs button::before { content: ""; grid-column: 2; grid-row: 1; width: 9px; height: 9px; background: var(--blue); align-self: center; opacity: 0; }
+.blog-tabs span { grid-column: 1; grid-row: 1; }
+.blog-tabs small { grid-column: 3; grid-row: 1; text-align: right; font-size: 12px; font-weight: 400; letter-spacing: 0; }
 .blog-tabs button:hover, .blog-tabs button[aria-current="true"] { color: var(--fg); }
-.blog-tabs button[aria-current="true"]::before { transform: scaleX(1); }
+.blog-tabs button[aria-current="true"]::before { opacity: 1; }
 /* One grid for everything: a label on the left that stays in view, the content on the right, a rule between rows */
 .view[hidden] { display: none; }
-.view-title { padding: clamp(22px, 2.6vw, 36px) 0 clamp(18px, 2vw, 28px); font: 600 clamp(36px, 5.2vw, 78px)/1 var(--ui); letter-spacing: -0.045em; }
 .row { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(24px, 4vw, 64px); width: 100%; padding: clamp(24px, 2.8vw, 40px) 0 clamp(36px, 4vw, 60px); border-top: 1px solid var(--line); text-align: left; }
-.view-title + .row { border-top-color: var(--fg); }
 .view > .row:first-child { padding-top: clamp(20px, 2.2vw, 32px); border-top: 0; } /* the tabs' rule is enough above the first row */
-.row-label { position: sticky; top: 84px; align-self: start; display: block; }
+.row-label { position: sticky; top: 24px; align-self: start; display: block; }
 .row-label img { display: block; width: 100%; height: auto; aspect-ratio: 5 / 2; object-fit: cover; margin-bottom: 16px; background: color-mix(in srgb, var(--fg) 7%, var(--bg)); }
 .row-label h3 { font-size: clamp(22px, 2vw, 30px); font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
 .row-label p { margin-top: 6px; font-size: 13px; color: var(--grey); }
 .row-body { display: block; min-width: 0; }
 /* the All tab: a row per category, its modules as pictures in two even columns */
-.row[data-mod] { scroll-margin-top: 62px; }
+.row[data-mod] { scroll-margin-top: 0; }
 .cat-link { display: block; text-align: left; }
-.cat-link b { display: block; font: 600 clamp(26px, 2.8vw, 42px)/1.1 var(--ui); letter-spacing: -0.04em; transition: color 0.2s; }
+.cat-link b { display: block; font: 600 clamp(28px, 3vw, 44px)/1.05 var(--grotesk); letter-spacing: -0.05em; transition: color 0.2s; }
 .cat-link small { display: block; margin-top: 10px; font-size: 13px; color: var(--grey); }
 .cat-link:hover b { color: var(--blue); }
 .mods { display: grid; align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 2.6vw, 36px) clamp(12px, 1.4vw, 20px); }
@@ -527,22 +527,14 @@ html.menu-on { overflow: hidden; }
 .book-all { position: absolute; left: var(--gutter); top: clamp(26px, 4vh, 40px); font-size: 14px; font-weight: 600; color: var(--fg); }
 .book-all:hover { color: var(--blue); }
 @media (max-width: 900px) {
-  /* the top bar takes the whole first line here, so the tabs scroll with the page, on one line of their own */
-  .blog-tabs { position: static; scroll-margin-top: 64px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .blog-tabs::-webkit-scrollbar { display: none; }
-  .blog-tabs button { flex: none; }
-  .blog-tabs button::before { top: -14px; }
 }
 @media (max-width: 700px) {
-  /* phone: the title across the width, a low heatmap under it, all four tabs on one line, tidy module captions */
-  .blog-head { --title: clamp(64px, 22vw, 120px); grid-template-columns: minmax(0, 1fr); row-gap: 18px; }
-  .heat { grid-template-rows: repeat(6, auto); }
-  .heat a { aspect-ratio: 1; }
-  .heat-foot { grid-column: 1; margin-top: -6px; font-size: 12px; }
-  .blog-tabs { justify-content: space-between; gap: 0; margin-top: 18px; padding: 12px 0; }
-  .blog-tabs button { font-size: clamp(13px, 3.8vw, 16px); }
-  .blog-tabs sup { display: none; }
-  .blog-tabs button::before { top: -13px; }
+  /* phone: the word across the width, the list, then a heatmap of square cells filling the width row by row */
+  .blog-head h1 { font-size: 16.4vw; }
+  .head-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .heat { flex: none; min-height: 0; grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(18, minmax(0, 1fr)); }
+  .heat a, .heat i { aspect-ratio: 1; }
+  .heat-foot { font-size: 12px; }
   .mods { gap: 20px 12px; }
   .mod span { display: block; padding-top: 8px; }
   .mod b { display: block; font-size: 14px; }
@@ -552,5 +544,4 @@ html.menu-on { overflow: hidden; }
   .row { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .row-label { position: static; }
   .covers { grid-template-columns: minmax(0, 1fr); }
-  .row[data-mod] { scroll-margin-top: 64px; }
 }

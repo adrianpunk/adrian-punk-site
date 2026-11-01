@@ -21,21 +21,35 @@ const tabs = document.getElementById('blogTabs');
 const list = document.getElementById('blogCats');
 const all = categories.reduce((n, c) => n + total(c), 0);
 
-// The heatmap beside the title: one cell per article, most-viewed first, in five steps of the blue.
+// The heatmap: one cell per article in view (all of them, or one category's), most-viewed first.
+// A cell keeps its step of the blue, set by its rank among all the articles.
 const views = (p) => parseFloat(p[3]);
-const everyPost = categories.flatMap((c) => c.modules.flatMap((m) => m.posts.filter(Array.isArray))).sort((a, b) => views(b) - views(a));
+const postsOf = (c) => c.modules.flatMap((m) => m.posts.filter(Array.isArray));
+const ranked = categories.flatMap(postsOf).sort((a, b) => views(b) - views(a));
+const step = new Map(ranked.map((p, n) => [p, 4 - Math.floor((n / ranked.length) * 5)]));
 const map = document.getElementById('tutorialMap');
-const summary = `${all} 篇文章 · ${categories.reduce((n, c) => n + c.modules.length, 0)} 个模块 · ${Math.round(everyPost.reduce((n, p) => n + views(p), 0))} 万浏览`;
 map.innerHTML = `
-  <div class="heat">${everyPost.map((p, n) =>
-    `<a class="h${4 - Math.floor((n / everyPost.length) * 5)}" href="${postUrl(p[1])}" ${ARTICLE} data-tip="${esc(p[0])} · ${esc(p[3])}浏览" aria-label="${esc(p[0])}"></a>`).join('')}</div>
-  <p class="heat-foot"><span aria-live="polite">${summary}</span><i aria-hidden="true"><b class="h0"></b><b class="h1"></b><b class="h2"></b><b class="h3"></b><b class="h4"></b></i></p>`;
+  <div class="heat"></div>
+  <p class="heat-foot"><span aria-live="polite"></span><i aria-hidden="true"><b class="h0"></b><b class="h1"></b><b class="h2"></b><b class="h3"></b><b class="h4"></b></i></p>`;
+const heat = map.querySelector('.heat');
+let summary = '';
+function drawHeat(i) {
+  const shown = i ? postsOf(categories[i - 1]).sort((a, b) => views(b) - views(a)) : ranked;
+  const moduleCount = i ? categories[i - 1].modules.length : categories.reduce((n, c) => n + c.modules.length, 0);
+  // One grid for every view, so cells never change size: this view's articles first, the other places left blank.
+  heat.innerHTML = shown.map((p) =>
+    `<a class="h${step.get(p)}" href="${postUrl(p[1])}" ${ARTICLE} data-tip="${esc(p[0])} · ${esc(p[3])}浏览" aria-label="${esc(p[0])}"></a>`).join('') +
+    '<i></i>'.repeat(ranked.length - shown.length);
+  summary = `${shown.length} 篇文章 · ${moduleCount} 个模块 · ${Math.round(shown.reduce((n, p) => n + views(p), 0))} 万浏览`;
+  tip.textContent = summary;
+  tip.classList.remove('is-on');
+}
 const tip = map.querySelector('.heat-foot span');
 map.addEventListener('pointerover', (e) => { const a = e.target.closest('[data-tip]'); tip.textContent = a ? a.dataset.tip : summary; tip.classList.toggle('is-on', !!a); });
 map.addEventListener('pointerleave', () => { tip.textContent = summary; tip.classList.remove('is-on'); });
 
-tabs.innerHTML = `<button type="button" data-i="0">All<sup>${all}</sup></button>` +
-  categories.map((c, i) => `<button type="button" data-i="${i + 1}">${esc(c.name)}<sup>${total(c)}</sup></button>`).join('');
+tabs.innerHTML = `<button type="button" data-i="0"><span>All</span><small>${all}</small></button>` +
+  categories.map((c, i) => `<button type="button" data-i="${i + 1}"><span>${esc(c.name)}</span><small>${total(c)}</small></button>`).join('');
 
 // A reading list, in blocks: each subheading starts a new one, and the numbering with it.
 function reading(posts) {
@@ -74,13 +88,14 @@ list.innerHTML = `
     </section>`).join('')}
   </div>` + categories.map((c, n) => `
   <div class="view${c.covers ? ' is-spread' : ''}" data-i="${n + 1}">
-    <h2 class="view-title">${esc(c.name)}</h2>
     ${c.modules.map((m, k) => moduleRow(c, m, k)).join('')}
   </div>`).join('');
 
 function show(i) {
   [...tabs.children].forEach((b) => b.setAttribute('aria-current', +b.dataset.i === i));
   list.querySelectorAll('.view').forEach((v) => { v.hidden = +v.dataset.i !== i; });
+  drawHeat(i);
+  document.getElementById('pageTitle').textContent = i ? categories[i - 1].name : 'Articles';
 }
 tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) show(+b.dataset.i); });
 list.addEventListener('click', (e) => {
