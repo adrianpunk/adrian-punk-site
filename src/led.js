@@ -3,7 +3,8 @@ import * as THREE from 'three';
 // A 32×32 dot-matrix panel that lives behind the lens glass. It is the character's face:
 // two amber eyes that follow the pointer and blink; `close` (0..1) shuts them as the camera
 // dives in; `eq` (8 levels) turns them into an equalizer while music plays; `glyph` shows
-// a number or icon (hovered track numbers, "HI", "?", a heart, a note).
+// a number or icon (hovered track numbers, "Hi", "?", a heart, a note), which follows the
+// pointer and shuts the same way.
 const GRID = 32;
 const SIZE = 512;
 const CELL = SIZE / GRID;
@@ -21,7 +22,7 @@ const FONT = {
   8: ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
   9: ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
   H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
-  I: ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
+  i: ['010', '000', '110', '010', '010', '010', '111'],
   '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100'],
   '¥': ['10001', '01010', '00100', '11111', '00100', '11111', '00100'],
 };
@@ -78,7 +79,9 @@ export function createLED() {
     // Equalizer: 8 bars, 2 dots wide, rising from row 24 (max 16 rows), squashed as the eyes close.
     const bars = state.eq?.map((v) => Math.round(v * 16 * (1 - state.close)));
     const glyph = !bars && state.glyph ? glyphDots(state.glyph) : null;
-    const sig = [gx, gy, half, off, bars, state.glyph].join(':');
+    // A glyph shuts from top and bottom toward its middle row.
+    const reach = Math.round(7 * (1 - state.close));
+    const sig = [gx, gy, half, off, bars, state.glyph, reach].join(':');
     if (sig === signature) return false;
     signature = sig;
 
@@ -94,7 +97,7 @@ export function createLED() {
           const col = Math.floor((x - 4) / 3);
           lit = x >= 4 && col < 8 && (x - 4) % 3 < 2 && y <= 24 && y > 24 - Math.max(1, bars[col]);
         } else if (glyph) {
-          lit = glyph.has(`${x},${y}`);
+          lit = Math.abs(y - gy - 15.5) <= reach + 0.5 && glyph.has(`${x - gx},${y - gy}`);
         } else {
           const inEye = (x >= 9 + gx && x <= 12 + gx) || (x >= 19 + gx && x <= 22 + gx);
           lit = inEye && (half === 0 ? y === cy : y >= cy - half && y <= cy + half - 1);

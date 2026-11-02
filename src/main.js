@@ -187,7 +187,7 @@ function endDistance() {
 let section = '', sectionSince = 0;
 function sectionGlyph(now) {
   if (face.section !== section) { section = face.section; sectionSince = now; }
-  if (section === 'notes' && now - sectionSince < 2200) return 'HI';
+  if (section === 'notes' && now - sectionSince < 2200) return 'Hi';
   if (section === 'parlour') return '?';
   return null;
 }
@@ -280,11 +280,11 @@ function frame(now) {
   camera.position.y += pointer.sy * 0.1 * free;
   camera.lookAt(target);
 
-  // Eyes look toward the pointer.
+  // The "Hi" looks toward the pointer.
   led.state.gazeX = pointer.sx * free;
   led.state.gazeY = pointer.sy * free;
   led.state.close = smooth(0.68, 0.8, op);
-  led.state.glyph = null;
+  led.state.glyph = 'Hi';
   led.draw(now);
   renderer.render(scene, camera);
 }
