@@ -112,8 +112,9 @@ function initCopy() {
   document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-copy]');
     if (!el) return;
-    try { await navigator.clipboard.writeText(el.dataset.copy); toast.textContent = `已复制微信号 ${el.dataset.copy}`; }
-    catch { toast.textContent = `微信号 ${el.dataset.copy}`; }
+    const name = el.dataset.copyName || '微信号';
+    try { await navigator.clipboard.writeText(el.dataset.copy); toast.textContent = `已复制${name} ${el.dataset.copy}`; }
+    catch { toast.textContent = `${name} ${el.dataset.copy}`; }
     toast.classList.add('is-on');
     clearTimeout(hide);
     hide = setTimeout(() => toast.classList.remove('is-on'), 2200);
