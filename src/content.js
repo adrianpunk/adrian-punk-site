@@ -276,6 +276,7 @@ export const friends = [
   { name: 'Phil', domain: 'rzcthink.top', href: 'https://rzcthink.top/', icon: 'img/friends/phil.svg', onWhite: true },
   { name: 'Grok Bot 新手指南', domain: 'bot.fmcat.top', href: 'https://bot.fmcat.top/', icon: 'img/friends/grokbot.svg' },
   { name: 'AfterNoise', domain: 'aftno.com', href: 'https://aftno.com/', icon: 'img/logos/afternoise.webp', onWhite: true },
+  { name: 'Roland', domain: 'imroland.com', href: 'https://imroland.com/', icon: 'img/friends/roland.webp' },
 ];
 
 export const parlour = [
