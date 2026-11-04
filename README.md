@@ -54,6 +54,8 @@ npx @gltf-transform/cli optimize 原始模型.glb public/models/camera_head_sax.
 
 ## 关于作者
 
+**Punk**
+
 AI视觉/AI小白教程<br>
 中科大硕士｜Punk Skills 作者｜3个月挣8位数<br>
 AfterNoise社群发起人
